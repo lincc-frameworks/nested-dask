@@ -33,9 +33,9 @@ def _nonempty_nestedframe(x, index=None):
 
 @make_array_nonempty.register(npd.NestedDtype)
 def _(dtype):
-    #return pd.DataFrame() # should it be dd.Dataframe()?
-    return NestedExtensionArray._from_sequence([pd.DataFrame()], dtype=dtype)
-    #return NestedExtensionArray. #TODO: Figure out
+    # must be two values
+    return NestedExtensionArray._from_sequence([pd.NA, pd.NA], dtype=dtype)
+
 
 #@register_series_accessor("nest")
 #class NestSeriesAccessor(npd.NestSeriesAccessor)
