@@ -1,16 +1,11 @@
-from dask.dataframe.utils import meta_nonempty
-from dask.dataframe.dispatch import make_meta_dispatch, pyarrow_schema_dispatch
-from dask.dataframe.backends import _nonempty_index, meta_nonempty_dataframe, _nonempty_series
-from dask.dataframe.extensions import make_array_nonempty, make_scalar, register_series_accessor
-import dask.dataframe as dd
-
-from dask_expr import get_collection_type
-
 import nested_pandas as npd
-from nested_pandas.series.ext_array import NestedExtensionArray
-from nested_pandas import NestedDtype, NestSeriesAccessor
-
 import pandas as pd
+from dask.dataframe.backends import meta_nonempty_dataframe
+from dask.dataframe.dispatch import make_meta_dispatch
+from dask.dataframe.extensions import make_array_nonempty
+from dask.dataframe.utils import meta_nonempty
+from dask_expr import get_collection_type
+from nested_pandas.series.ext_array import NestedExtensionArray
 
 from .core import NestedFrame
 
@@ -35,9 +30,3 @@ def _nonempty_nestedframe(x, index=None):
 def _(dtype):
     # must be two values
     return NestedExtensionArray._from_sequence([pd.NA, pd.NA], dtype=dtype)
-
-
-#@register_series_accessor("nest")
-#class NestSeriesAccessor(npd.NestSeriesAccessor)
-
-
