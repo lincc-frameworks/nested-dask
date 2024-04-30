@@ -1,3 +1,8 @@
+import dask.dataframe as dd
+
+from .core import NestedFrame
+
+
 def read_parquet(
     path,
     columns=None,
@@ -18,4 +23,25 @@ def read_parquet(
     filesystem=None,
     **kwargs,
 ):
-    pass
+    return NestedFrame.from_dask_dataframe(
+        dd.read_parquet(
+            path=path,
+            columns=columns,
+            filters=filters,
+            categories=categories,
+            index=index,
+            storage_options=storage_options,
+            engine=engine,
+            use_nullable_dtypes=use_nullable_dtypes,
+            dtype_backend=dtype_backend,
+            calculate_divisions=calculate_divisions,
+            ignore_metadata_file=ignore_metadata_file,
+            metadata_task_size=metadata_task_size,
+            split_row_groups=split_row_groups,
+            blocksize=blocksize,
+            aggregate_files=aggregate_files,
+            parquet_file_extension=parquet_file_extension,
+            filesystem=filesystem,
+            **kwargs,
+        )
+    )

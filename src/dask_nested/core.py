@@ -2,6 +2,7 @@ import dask.dataframe as dd
 import dask_expr as dx
 import nested_pandas as npd
 from dask_expr._collection import new_collection
+from nested_pandas.series.dtype import NestedDtype
 from nested_pandas.series.packer import pack_flat
 from pandas._libs import lib
 from pandas._typing import AnyAll, Axis, IndexLabel
@@ -91,29 +92,42 @@ class NestedFrame(
         return result
 
     @classmethod
-    def from_dask_dataframe(cl, df, ensemble=None, label=None):
-        """Returns an EnsembleFrame constructed from a Dask dataframe.
+    def from_dask_dataframe(cl, df):
+        """Converts a Dask Dataframe to a Dask-Nested NestedFrame
 
         Parameters
         ----------
-        df: `dask.dataframe.DataFrame` or `list`
-            a Dask dataframe to convert to an EnsembleFrame
-        ensemble: `tape.ensemble.Ensemble`, optional
-            A link to the Ensemble object that owns this frame.
-        label: `str`, optional
-            The label used to by the Ensemble to identify the frame.
+        df:
+            A Dask Dataframe to convert
 
         Returns
-        ----------
-        result: `tape.EnsembleFrame`
-            The constructed EnsembleFrame object.
+        -------
+        `dask_nested.NestedFrame`
         """
-        # Create a EnsembleFrame by mapping the partitions to the appropriate meta, TapeFrame
-        # TODO(wbeebe@uw.edu): Determine if there is a better method
-        result = df.map_partitions(npd.NestedFrame)
-        result.ensemble = ensemble
-        result.label = label
-        return result
+        return df.map_partitions(npd.NestedFrame)
+
+    def compute(self, **kwargs):
+        """Compute this Dask collection, returning the underlying dataframe or series."""
+        return npd.NestedFrame(super().compute(**kwargs))
+
+    @property
+    def all_columns(self) -> dict:
+        """returns a dictionary of columns for each base/nested dataframe"""
+        all_columns = {"base": self.columns}
+        for column in self.columns:
+            if isinstance(self[column].dtype, NestedDtype):
+                nest_cols = list(self.dtypes[column].fields.keys())
+                all_columns[column] = nest_cols
+        return all_columns
+
+    @property
+    def nested_columns(self) -> list:
+        """retrieves the base column names for all nested dataframes"""
+        nest_cols = []
+        for column in self.columns:
+            if isinstance(self[column].dtype, NestedDtype):
+                nest_cols.append(column)
+        return nest_cols
 
     def add_nested(self, nested, name):
         """Packs a dataframe into a nested column
@@ -177,7 +191,7 @@ class NestedFrame(
 
         >>> df.query("mynested.a > 2")
         """
-        return self.map_partitions(lambda x: x.query(expr))
+        return self.map_partitions(lambda x: x.query(expr), meta=self._meta)
 
     def dropna(
         self,
@@ -260,7 +274,7 @@ class NestedFrame(
             meta=meta,
         )
 
-    def reduce(self, func, *args, **kwargs):
+    def reduce(self, func, *args, meta=None, **kwargs):
         """
         Takes a function and applies it to each top-level row of the NestedFrame.
 
@@ -295,4 +309,4 @@ class NestedFrame(
         """
 
         # apply nested_pandas reduce via map_partitions
-        return self.map_partitions(lambda x: x.reduce(func, *args, **kwargs))
+        return self.map_partitions(lambda x: x.reduce(func, *args, **kwargs), meta=meta)
