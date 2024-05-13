@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dask.dataframe as dd
 import dask_expr as dx
 import nested_pandas as npd
@@ -8,8 +10,11 @@ from pandas._libs import lib
 from pandas._typing import AnyAll, Axis, IndexLabel
 from pandas.api.extensions import no_default
 
+# need this for the base _Frame class
+# mypy: disable-error-code="misc"
 
-class _Frame(dx.FrameBase):
+
+class _Frame(dx.FrameBase):  # type: ignore
     """Base class for extensions of Dask Dataframes that track additional
     Ensemble-related metadata.
     """
@@ -34,7 +39,7 @@ class _Frame(dx.FrameBase):
 
         return self._rebuild, (func, args)
 
-    def _rebuild(self, graph, func, args):
+    def _rebuild(self, graph, func, args):  # type: ignore
         collection = func(graph, *args)
         return collection
 
@@ -63,7 +68,9 @@ class NestedFrame(
         return result
 
     @classmethod
-    def from_nestedpandas(cls, data, npartitions=None, chunksize=None, sort=True, label=None, ensemble=None):
+    def from_nestedpandas(
+        cls, data, npartitions=None, chunksize=None, sort=True, label=None, ensemble=None
+    ) -> NestedFrame:
         """Returns an EnsembleFrame constructed from a TapeFrame.
 
         Parameters
@@ -89,10 +96,10 @@ class NestedFrame(
             The constructed EnsembleFrame object.
         """
         result = dd.from_pandas(data, npartitions=npartitions, chunksize=chunksize, sort=sort)
-        return result
+        return NestedFrame.from_dask_dataframe(result)
 
     @classmethod
-    def from_dask_dataframe(cl, df):
+    def from_dask_dataframe(cls, df) -> NestedFrame:
         """Converts a Dask Dataframe to a Dask-Nested NestedFrame
 
         Parameters
@@ -129,7 +136,7 @@ class NestedFrame(
                 nest_cols.append(column)
         return nest_cols
 
-    def add_nested(self, nested, name):
+    def add_nested(self, nested, name) -> NestedFrame:  # type: ignore[name-defined] # noqa: F821
         """Packs a dataframe into a nested column
 
         Parameters
@@ -146,7 +153,7 @@ class NestedFrame(
         nested = nested.map_partitions(lambda x: pack_flat(x)).rename(name)
         return self.join(nested, how="outer")
 
-    def query(self, expr):
+    def query(self, expr) -> Self:  # type: ignore # noqa: F821:
         """
         Query the columns of a NestedFrame with a boolean expression. Specified
         queries can target nested columns in addition to the typical column set
@@ -203,7 +210,7 @@ class NestedFrame(
         subset: IndexLabel | None = None,
         inplace: bool = False,
         ignore_index: bool = False,
-    ):
+    ) -> Self:  # type: ignore[name-defined] # noqa: F821:
         """
         Remove missing values for one layer of the NestedFrame.
 
@@ -260,7 +267,6 @@ class NestedFrame(
         time.
         """
         # grab meta from head, assumes row-based operation
-        meta = self.head(0)
         return self.map_partitions(
             lambda x: x.dropna(
                 axis=axis,
@@ -271,10 +277,10 @@ class NestedFrame(
                 inplace=inplace,
                 ignore_index=ignore_index,
             ),
-            meta=meta,
+            meta=self._meta,
         )
 
-    def reduce(self, func, *args, meta=None, **kwargs):
+    def reduce(self, func, *args, meta=None, **kwargs) -> NestedFrame:
         """
         Takes a function and applies it to each top-level row of the NestedFrame.
 
@@ -292,6 +298,8 @@ class NestedFrame(
         args : positional arguments
             Positional arguments to pass to the function, the first *args should be the names of the
             columns to apply the function to.
+        meta : dataframe or series-like, optional
+            The dask meta of the output.
         kwargs : keyword arguments, optional
             Keyword arguments to pass to the function.
 
