@@ -21,7 +21,7 @@ def test_dataset():
         "band": randomstate.choice(["r", "g"], size=layer_size * n_base),
         "index": np.arange(layer_size * n_base) % n_base,
     }
-    layer_nf = npd.NestedFrame(data=layer_data).set_index("index")
+    layer_nf = npd.NestedFrame(data=layer_data).set_index("index").sort_index()
 
     base_dn = dn.NestedFrame.from_nestedpandas(base_nf, npartitions=5)
     layer_dn = dn.NestedFrame.from_nestedpandas(layer_nf, npartitions=10)
