@@ -13,20 +13,21 @@ get_collection_type.register(npd.NestedFrame, lambda _: NestedFrame)
 
 
 @make_meta_dispatch.register(npd.NestedFrame)
-def make_meta_frame(x, index=None):
-    # Create an empty NestedFrame to use as Dask's underlying object meta.
+def make_meta_frame(x, index=None) -> npd.NestedFrame:
+    """Create an empty NestedFrame to use as Dask's underlying object meta."""
     result = x.head(0)
     return result
 
 
 @meta_nonempty.register(npd.NestedFrame)
-def _nonempty_nestedframe(x, index=None):
-    # Construct a new NestedFrame with the same underlying data.
+def _nonempty_nestedframe(x, index=None) -> npd.NestedFrame:
+    """Construct a new NestedFrame with the same underlying data."""
     df = meta_nonempty_dataframe(x)
     return npd.NestedFrame(df)
 
 
 @make_array_nonempty.register(npd.NestedDtype)
-def _(dtype):
+def _(dtype) -> NestedExtensionArray:
+    """Register a valid dtype for the NestedExtensionArray"""
     # must be two values
     return NestedExtensionArray._from_sequence([pd.NA, pd.NA], dtype=dtype)
