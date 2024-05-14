@@ -11,7 +11,7 @@ def test_nest_accessor(test_dataset):
 
     # Make sure we get an attribute error when trying to use the wrong column
     with pytest.raises(AttributeError):
-        test_dataset.ra.nest
+        test_dataset.ra.nest  # noqa
 
 
 def test_fields(test_dataset):

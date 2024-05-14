@@ -181,7 +181,7 @@ def read_parquet(
         It may be necessary to change this argument if the data files in your
         parquet dataset do not end in ".parq", ".parquet", or ".pq".
     filesystem: "fsspec", "arrow", or fsspec.AbstractFileSystem backend to use.
-        Specifies the backend to use
+        Specifies the backend to use.
     dataset: dict, default None
         Dictionary of options to use when creating a ``pyarrow.dataset.Dataset`` object.
         These options may include a "filesystem" key to configure the desired
