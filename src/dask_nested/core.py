@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import dask.dataframe as dd
 import dask_expr as dx
 import nested_pandas as npd
@@ -318,3 +320,59 @@ class NestedFrame(
 
         # apply nested_pandas reduce via map_partitions
         return self.map_partitions(lambda x: x.reduce(func, *args, **kwargs), meta=meta)
+
+    def to_parquet(self, path, by_layer=False, **kwargs) -> None:
+        """Creates parquet file(s) with the data of a NestedFrame, either
+        as a single parquet file directory where each nested dataset is packed
+        into its own column or as an individual parquet file directory for each
+        layer.
+
+        Docstring copied from nested-pandas.
+
+        Note that here we always opt to use the pyarrow engine for writing
+        parquet files.
+
+        Parameters
+        ----------
+        path : str
+            The path to the parquet directory to be written if 'by_layer' is
+            False. If 'by_layer' is True, this should be the path to an
+            existing directory.
+        by_layer : bool, default False
+            If False, writes the entire NestedFrame to a single parquet
+            directory.
+
+            If True, writes each layer to a separate parquet sub-directory
+            within the directory specified by path. The filename for each
+            outputted file will be named after its layer. For example for the
+            base layer this is always "base".
+        kwargs : keyword arguments, optional
+            Keyword arguments to pass to the function.
+
+        Returns
+        -------
+        None
+        """
+
+        # code copied from nested-pandas rather than wrapped
+        # reason being that a map_partitions call is probably not well-behaved here?
+
+        if not by_layer:
+            # We just defer to the pandas to_parquet method if we're not writing by layer
+            # or there is only one layer in the NestedFrame.
+            super().to_parquet(path, engine="pyarrow", **kwargs)
+        else:
+            # If we're writing by layer, path must be an existing directory
+            if not os.path.isdir(path):
+                raise ValueError("The provided path must be an existing directory if by_layer=True")
+
+            # Write the base layer to a parquet file
+            base_frame = self.drop(columns=self.nested_columns)
+            base_frame.to_parquet(os.path.join(path, "base"), by_layer=False, **kwargs)
+
+            # Write each nested layer to a parquet file
+            for layer in self.all_columns:
+                if layer != "base":
+                    path_layer = os.path.join(path, f"{layer}")
+                    self[layer].nest.to_flat().to_parquet(path_layer, engine="pyarrow", **kwargs)
+        return None
