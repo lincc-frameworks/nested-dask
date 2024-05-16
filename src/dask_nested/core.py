@@ -68,7 +68,7 @@ class NestedFrame(
         return result
 
     @classmethod
-    def from_nestedpandas(
+    def from_nested_pandas(
         cls, data, npartitions=None, chunksize=None, sort=True, label=None, ensemble=None
     ) -> NestedFrame:
         """Returns an EnsembleFrame constructed from a TapeFrame.

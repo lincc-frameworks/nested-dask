@@ -30,8 +30,8 @@ def _generate_benchmark_data(add_nested=True):
     layer_nf = npd.NestedFrame(data=layer_data).set_index("index").sort_index()
 
     # Convert to Dask
-    base_nf = dn.NestedFrame.from_nestedpandas(base_nf).repartition(npartitions=5)
-    layer_nf = dn.NestedFrame.from_nestedpandas(layer_nf).repartition(npartitions=50)
+    base_nf = dn.NestedFrame.from_nested_pandas(base_nf).repartition(npartitions=5)
+    layer_nf = dn.NestedFrame.from_nested_pandas(layer_nf).repartition(npartitions=50)
 
     # Return based on add_nested
     if add_nested:
