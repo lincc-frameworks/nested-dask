@@ -321,7 +321,7 @@ class NestedFrame(
         # apply nested_pandas reduce via map_partitions
         return self.map_partitions(lambda x: x.reduce(func, *args, **kwargs), meta=meta)
 
-    def to_parquet(self, path, by_layer=False, **kwargs) -> None:
+    def to_parquet(self, path, by_layer=True, **kwargs) -> None:
         """Creates parquet file(s) with the data of a NestedFrame, either
         as a single parquet file directory where each nested dataset is packed
         into its own column or as an individual parquet file directory for each
@@ -335,10 +335,8 @@ class NestedFrame(
         Parameters
         ----------
         path : str
-            The path to the parquet directory to be written if 'by_layer' is
-            False. If 'by_layer' is True, this should be the path to an
-            existing directory.
-        by_layer : bool, default False
+            The path to the parquet directory to be written.
+        by_layer : bool, default True
             If False, writes the entire NestedFrame to a single parquet
             directory.
 
@@ -358,14 +356,23 @@ class NestedFrame(
         # reason being that a map_partitions call is probably not well-behaved here?
 
         if not by_layer:
+            # Todo: Investigate this more
+            # Divisions cannot be generated from a parquet file that stores
+            # nested information without a reset_index().set_index() loop. It
+            # seems like this happens at the to_parquet level rather than
+            # in read_parquet as dropping the nested columns from the dataframe
+            # to save does enable divisions to be found, but removing the
+            # nested columns from the set of columns to load does not.
+            # Divisions are going to be crucial, and so I think it's best to
+            # not support this until this is resolved. However the non-by_layer
+            # mode is needed for by_layer so it may be best to just settle for
+            # changing the default and filing a higher-priority bug.
+            # raise NotImplementedError
+
             # We just defer to the pandas to_parquet method if we're not writing by layer
             # or there is only one layer in the NestedFrame.
             super().to_parquet(path, engine="pyarrow", **kwargs)
         else:
-            # If we're writing by layer, path must be an existing directory
-            if not os.path.isdir(path):
-                raise ValueError("The provided path must be an existing directory if by_layer=True")
-
             # Write the base layer to a parquet file
             base_frame = self.drop(columns=self.nested_columns)
             base_frame.to_parquet(os.path.join(path, "base"), by_layer=False, **kwargs)

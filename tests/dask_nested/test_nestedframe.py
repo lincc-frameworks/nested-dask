@@ -76,7 +76,6 @@ def test_dropna(test_dataset_with_nans):
 
     nan_free_nested = test_dataset_with_nans.dropna(subset=["nested.t"])
 
-    # import pdb;pdb.set_trace()
     flat_nested_nan_free = nan_free_nested.map_partitions(lambda x: x.nested.nest.to_flat(), meta=meta)
     flat_nested = test_dataset_with_nans.map_partitions(lambda x: x.nested.nest.to_flat(), meta=meta)
     # should just remove one row
@@ -99,3 +98,49 @@ def test_reduce(test_dataset):
 
     assert pytest.approx(res2.compute()[15], 0.1) == 53.635174
     assert pytest.approx(sum(res2.compute()), 0.1) == 2488.960119
+
+
+def test_to_parquet_combined(test_dataset, tmp_path):
+    """test to_parquet when saving all layers to a single directory"""
+
+    test_save_path = tmp_path / "test_dataset"
+
+    # send to parquet
+    test_dataset.to_parquet(test_save_path, by_layer=False)
+
+    # load back from parquet
+    loaded_dataset = dn.read_parquet(test_save_path, calculate_divisions=True)
+    # todo: file bug for this and investigate
+    loaded_dataset = loaded_dataset.reset_index().set_index("index")
+
+    # Check for equivalence
+    assert test_dataset.divisions == loaded_dataset.divisions
+
+    test_dataset = test_dataset.compute()
+    loaded_dataset = loaded_dataset.compute()
+
+    assert test_dataset.equals(loaded_dataset)
+
+
+def test_to_parquet_by_layer(test_dataset, tmp_path):
+    """test to_parquet when saving layers to subdirectories"""
+
+    test_save_path = tmp_path / "test_dataset"
+
+    # send to parquet
+    test_dataset.to_parquet(test_save_path, by_layer=True, write_index=True)
+
+    # load back from parquet
+    loaded_base = dn.read_parquet(test_save_path / "base", calculate_divisions=True)
+    loaded_nested = dn.read_parquet(test_save_path / "nested", calculate_divisions=True)
+
+    loaded_dataset = loaded_base.add_nested(loaded_nested, "nested")
+
+    # Check for equivalence
+    assert test_dataset.divisions == loaded_dataset.divisions
+
+    test_dataset = test_dataset.compute()
+    loaded_dataset = loaded_dataset.compute()
+
+    # import pdb; pdb.set_trace()
+    assert test_dataset.equals(loaded_dataset)
