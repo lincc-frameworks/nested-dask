@@ -337,6 +337,11 @@ class NestedFrame(
         path : str
             The path to the parquet directory to be written.
         by_layer : bool, default True
+            NOTE: by_layer=False will not reliably preserve divisions currently,
+            be warned when using it that loading from such a dataset will
+            likely require you to reset and set the index to generate divisions
+            information.
+
             If False, writes the entire NestedFrame to a single parquet
             directory.
 
