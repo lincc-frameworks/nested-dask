@@ -1,3 +1,6 @@
+# Python 3.9 doesn't support "|" for types
+from __future__ import annotations
+
 import nested_pandas as npd
 import pandas as pd
 from dask.dataframe.backends import meta_nonempty_dataframe
