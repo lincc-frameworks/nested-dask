@@ -142,5 +142,4 @@ def test_to_parquet_by_layer(test_dataset, tmp_path):
     test_dataset = test_dataset.compute()
     loaded_dataset = loaded_dataset.compute()
 
-    # import pdb; pdb.set_trace()
     assert test_dataset.equals(loaded_dataset)
