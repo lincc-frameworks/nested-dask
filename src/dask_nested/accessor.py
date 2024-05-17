@@ -1,3 +1,6 @@
+# Python 3.9 doesn't support "|" for types
+from __future__ import annotations
+
 import dask.dataframe as dd
 import nested_pandas as npd
 from dask.dataframe.extensions import register_series_accessor
