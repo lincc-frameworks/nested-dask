@@ -14,6 +14,9 @@ from .core import NestedFrame
 
 get_collection_type.register(npd.NestedFrame, lambda _: NestedFrame)
 
+# The following dispatch functions are defined as per the Dask extension guide:
+# https://docs.dask.org/en/latest/dataframe-extend.html
+
 
 @make_meta_dispatch.register(npd.NestedFrame)
 def make_meta_frame(x, index=None) -> npd.NestedFrame:
@@ -32,5 +35,6 @@ def _nonempty_nestedframe(x, index=None) -> npd.NestedFrame:
 @make_array_nonempty.register(npd.NestedDtype)
 def _(dtype) -> NestedExtensionArray:
     """Register a valid dtype for the NestedExtensionArray"""
-    # must be two values
+    # must be two values to avoid a length error in meta inference
+    # Dask seems to explicitly require meta dtypes to have length 2.
     return NestedExtensionArray._from_sequence([pd.NA, pd.NA], dtype=dtype)

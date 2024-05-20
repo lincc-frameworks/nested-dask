@@ -17,13 +17,11 @@ from pandas.api.extensions import no_default
 
 
 class _Frame(dx.FrameBase):  # type: ignore
-    """Base class for extensions of Dask Dataframes that track additional
-    Ensemble-related metadata.
-    """
+    """Base class for extensions of Dask Dataframes."""
 
     _partition_type = npd.NestedFrame
 
-    def __init__(self, expr, label=None, ensemble=None):
+    def __init__(self, expr):
         super().__init__(expr)
 
     @property
@@ -49,18 +47,14 @@ class _Frame(dx.FrameBase):  # type: ignore
 class NestedFrame(
     _Frame, dd.DataFrame
 ):  # can use dd.DataFrame instead of dx.DataFrame if the config is set true (default in >=2024.3.0)
-    """An extension for a Dask Dataframe for Nested.
-
-    The underlying non-parallel dataframes are TapeFrames and TapeSeries which extend Pandas frames.
+    """An extension for a Dask Dataframe that has Nested-Pandas functionality.
 
     Examples
-    ----------
-    Instatiation::
-
-        import tape
-        ens = tape.Ensemble()
-        data = {...} # Some data you want tracked by the Ensemble
-        ensemble_frame = tape.EnsembleFrame.from_dict(data, label="my_frame", ensemble=ens)
+    --------
+    >>> import nested_dask as nd
+    >>> base = nd.NestedFrame(base_data)
+    >>> layer = nd.NestedFrame(layer_data)
+    >>> base.add_nested(layer, "layer")
     """
 
     _partition_type = npd.NestedFrame  # Tracks the underlying data type
@@ -71,14 +65,19 @@ class NestedFrame(
 
     @classmethod
     def from_nested_pandas(
-        cls, data, npartitions=None, chunksize=None, sort=True, label=None, ensemble=None
+        cls,
+        data,
+        npartitions=None,
+        chunksize=None,
+        sort=True,
     ) -> NestedFrame:
-        """Returns an EnsembleFrame constructed from a TapeFrame.
+        """Returns an Nested-Dask NestedFrame constructed from a Nested-Pandas
+        NestedFrame.
 
         Parameters
         ----------
-        data: `TapeFrame`
-            Frame containing the underlying data fro the EnsembleFram
+        data: `NestedFrame`
+            Nested-Pandas NestedFrame containing the underlying data
         npartitions: `int`, optional
             The number of partitions of the index to create. Note that depending on
             the size and index of the dataframe, the output may have fewer
@@ -87,15 +86,11 @@ class NestedFrame(
             Size of the individual chunks of data in non-parallel objects that make up Dask frames.
         sort: `bool`, optional
             Whether to sort the frame by a default index.
-        label: `str`, optional
-            The label used to by the Ensemble to identify the frame.
-        ensemble: `tape.Ensemble`, optional
-            A link to the Ensemble object that owns this frame.
 
         Returns
         ----------
-        result: `tape.EnsembleFrame`
-            The constructed EnsembleFrame object.
+        result: `NestedFrame`
+            The constructed Dask-Nested NestedFrame object.
         """
         result = dd.from_pandas(data, npartitions=npartitions, chunksize=chunksize, sort=sort)
         return NestedFrame.from_dask_dataframe(result)
@@ -268,7 +263,7 @@ class NestedFrame(
         to a single layer, multi-layer operations are not supported at this
         time.
         """
-        # grab meta from head, assumes row-based operation
+        # propagate meta, assumes row-based operation
         return self.map_partitions(
             lambda x: x.dropna(
                 axis=axis,
