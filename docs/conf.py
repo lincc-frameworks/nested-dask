@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath("../src/"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "nested-dask"
-copyright = "2023, lincc-frameworks"
+copyright = "2024, lincc-frameworks"
 author = "lincc-frameworks"
 release = version("nested-dask")
 # for example take major/minor
@@ -55,4 +55,4 @@ autoapi_ignore = ["*/__main__.py", "*/_version.py"]
 autoapi_add_toc_tree_entry = False
 autoapi_member_order = "bysource"
 
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_book_theme"
