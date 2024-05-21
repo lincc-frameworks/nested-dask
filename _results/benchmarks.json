@@ -1,17 +1,17 @@
 {
-    "benchmarks.mem_list": {
-        "code": "def mem_list():\n    \"\"\"Memory computations are prefixed with 'mem' or 'peakmem'.\"\"\"\n    return example_benchmarks.memory_computation()",
-        "name": "benchmarks.mem_list",
+    "benchmarks.NestedFrameAddNested.peakmem_run": {
+        "code": "class NestedFrameAddNested:\n    def peakmem_run(self):\n        \"\"\"Benchmark the memory usage of adding a nested layer\"\"\"\n        self.run()\n\n    def setup(self):\n        \"\"\"Set up the benchmark environment\"\"\"\n        self.base_nf, self.layer_nf = _generate_benchmark_data(add_nested=False)",
+        "name": "benchmarks.NestedFrameAddNested.peakmem_run",
         "param_names": [],
         "params": [],
-        "type": "memory",
+        "type": "peakmemory",
         "unit": "bytes",
-        "version": "a31e7e31a99db6599fc29032ea5a3cb9782922117f13e122a69c2745a93c3d32"
+        "version": "db26c2836d56ca35e5421406d56e6c4de7972b479c29dee071cb1dd086382930"
     },
-    "benchmarks.time_computation": {
-        "code": "def time_computation():\n    \"\"\"Time computations are prefixed with 'time'.\"\"\"\n    example_benchmarks.runtime_computation()",
+    "benchmarks.NestedFrameAddNested.time_run": {
+        "code": "class NestedFrameAddNested:\n    def time_run(self):\n        \"\"\"Benchmark the runtime of adding a nested layer\"\"\"\n        self.run()\n\n    def setup(self):\n        \"\"\"Set up the benchmark environment\"\"\"\n        self.base_nf, self.layer_nf = _generate_benchmark_data(add_nested=False)",
         "min_run_count": 2,
-        "name": "benchmarks.time_computation",
+        "name": "benchmarks.NestedFrameAddNested.time_run",
         "number": 0,
         "param_names": [],
         "params": [],
@@ -20,7 +20,55 @@
         "sample_time": 0.01,
         "type": "time",
         "unit": "seconds",
-        "version": "089635b7375b19f5c790c7337625b200db3327a27d63c756ac5dbb4c1fc25b62",
+        "version": "fda6ec1088e8e98ead17c2ee5d47d0a01600609ac6c875a45a86f1c381d7b60e",
+        "warmup_time": -1
+    },
+    "benchmarks.NestedFrameQuery.peakmem_run": {
+        "code": "class NestedFrameQuery:\n    def peakmem_run(self):\n        \"\"\"Benchmark the memory usage of applying the two queries\"\"\"\n        self.run()\n\n    def setup(self):\n        \"\"\"Set up the benchmark environment\"\"\"\n        self.nf = _generate_benchmark_data(add_nested=True)",
+        "name": "benchmarks.NestedFrameQuery.peakmem_run",
+        "param_names": [],
+        "params": [],
+        "type": "peakmemory",
+        "unit": "bytes",
+        "version": "cde6872b81facd303e638555fdca89d1f48c05ba67760f580accf212041e2157"
+    },
+    "benchmarks.NestedFrameQuery.time_run": {
+        "code": "class NestedFrameQuery:\n    def time_run(self):\n        \"\"\"Benchmark the runtime of applying the two queries\"\"\"\n        self.run()\n\n    def setup(self):\n        \"\"\"Set up the benchmark environment\"\"\"\n        self.nf = _generate_benchmark_data(add_nested=True)",
+        "min_run_count": 2,
+        "name": "benchmarks.NestedFrameQuery.time_run",
+        "number": 0,
+        "param_names": [],
+        "params": [],
+        "repeat": 0,
+        "rounds": 2,
+        "sample_time": 0.01,
+        "type": "time",
+        "unit": "seconds",
+        "version": "94628bc8b6d29ee6e761351ba728f2cfba1743530dd5372316fb490c1266653e",
+        "warmup_time": -1
+    },
+    "benchmarks.NestedFrameReduce.peakmem_run": {
+        "code": "class NestedFrameReduce:\n    def peakmem_run(self):\n        \"\"\"Benchmark the memory usage of applying the reduce function\"\"\"\n        self.run()\n\n    def setup(self):\n        \"\"\"Set up the benchmark environment\"\"\"\n        self.nf = _generate_benchmark_data(add_nested=True)",
+        "name": "benchmarks.NestedFrameReduce.peakmem_run",
+        "param_names": [],
+        "params": [],
+        "type": "peakmemory",
+        "unit": "bytes",
+        "version": "cd62b02e75f002c3589e79813481691db88887b1e27b7c791e187fc324d5faba"
+    },
+    "benchmarks.NestedFrameReduce.time_run": {
+        "code": "class NestedFrameReduce:\n    def time_run(self):\n        \"\"\"Benchmark the runtime of applying the reduce function\"\"\"\n        self.run()\n\n    def setup(self):\n        \"\"\"Set up the benchmark environment\"\"\"\n        self.nf = _generate_benchmark_data(add_nested=True)",
+        "min_run_count": 2,
+        "name": "benchmarks.NestedFrameReduce.time_run",
+        "number": 0,
+        "param_names": [],
+        "params": [],
+        "repeat": 0,
+        "rounds": 2,
+        "sample_time": 0.01,
+        "type": "time",
+        "unit": "seconds",
+        "version": "d9dacb2801484da366e419dbed981847476cd7ec26e14ad5a067a73fe217f526",
         "warmup_time": -1
     },
     "version": 2
