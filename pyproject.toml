@@ -47,7 +47,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "src/dask_nested/_version.py"
+write_to = "src/nested_dask/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = [
@@ -107,7 +107,7 @@ ignore = [
     "UP028", # Allow yield in for loop
 ]
 [tool.setuptools.package-data]
-dask_nested = ["py.typed"]
+nested_dask = ["py.typed"]
 
 [tool.coverage.run]
-omit=["src/dask_nested/_version.py"]
+omit=["src/nested_dask/_version.py"]
