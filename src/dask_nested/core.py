@@ -83,7 +83,9 @@ class NestedFrame(
             the size and index of the dataframe, the output may have fewer
             partitions than requested.
         chunksize: `int`, optional
-            Size of the individual chunks of data in non-parallel objects that make up Dask frames.
+            The desired number of rows per index partition to use. Note that
+            depending on the size and index of the dataframe, actual partition
+            sizes may vary.
         sort: `bool`, optional
             Whether to sort the frame by a default index.
 
@@ -133,7 +135,7 @@ class NestedFrame(
                 nest_cols.append(column)
         return nest_cols
 
-    def add_nested(self, nested, name) -> NestedFrame:  # type: ignore[name-defined] # noqa: F821
+    def add_nested(self, nested, name, how="outer") -> NestedFrame:  # type: ignore[name-defined] # noqa: F821
         """Packs a dataframe into a nested column
 
         Parameters
@@ -142,13 +144,29 @@ class NestedFrame(
             A flat dataframe to pack into a nested column
         name:
             The name given to the nested column
+        how: {‘left’, ‘right’, ‘outer’, ‘inner’, ‘cross’}, default ‘outer’
+            How to handle the operation of the two objects.
+
+            * left: use calling frame’s index (or column if on is specified)
+
+            * right: use other’s index.
+
+            * outer: form union of calling frame’s index (or column if on is
+            specified) with other’s index, and sort it lexicographically.
+
+            * inner: form intersection of calling frame’s index (or column if
+            on is specified) with other’s index, preserving the order of the
+            calling’s one.
+
+            * cross: creates the cartesian product from both frames, preserves
+            the order of the left keys.
 
         Returns
         -------
         `dask_nested.NestedFrame`
         """
         nested = nested.map_partitions(lambda x: pack_flat(x)).rename(name)
-        return self.join(nested, how="outer")
+        return self.join(nested, how=how)
 
     def query(self, expr) -> Self:  # type: ignore # noqa: F821:
         """

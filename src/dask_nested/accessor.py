@@ -35,7 +35,7 @@ class DaskNestSeriesAccessor(npd.NestSeriesAccessor):
     def fields(self) -> list[str]:
         """Names of the nested columns"""
 
-        return self._series.head(0).nest.fields  # hacky
+        return list(self._series.dtype.fields)
 
     def to_lists(self, fields: list[str] | None = None) -> dd.DataFrame:
         """Convert nested series into dataframe of list-array columns

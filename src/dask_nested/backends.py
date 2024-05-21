@@ -21,7 +21,9 @@ get_collection_type.register(npd.NestedFrame, lambda _: NestedFrame)
 @make_meta_dispatch.register(npd.NestedFrame)
 def make_meta_frame(x, index=None) -> npd.NestedFrame:
     """Create an empty NestedFrame to use as Dask's underlying object meta."""
-    result = x.head(0)
+
+    dtypes = x.dtypes.to_dict()
+    result = npd.NestedFrame({key: pd.Series(dtype=d) for key, d in dtypes.items()})
     return result
 
 
