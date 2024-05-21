@@ -5,12 +5,12 @@
 Nested-Dask
 ========================================================================================
 
-A ![dask](https://www.dask.org/) extension of 
-![nested-pandas](https://nested-pandas.readthedocs.io/en/latest/).
+A `Dask <https://www.dask.org/>`_ extension of 
+`Nested-Pandas <https://nested-pandas.readthedocs.io/en/latest/>`_.
 
-Nested-pandas is a pandas extension package that empowers efficient analysis
+Nested-Pandas is a Pandas extension package that empowers efficient analysis
 of nested associated datasets. This package wraps the majority of the 
-nested-pandas API with Dask, which enables easy parallelization and capacity 
+Nested-Pandas API with Dask, which enables easy parallelization and capacity 
 for work at scale.
 
 
