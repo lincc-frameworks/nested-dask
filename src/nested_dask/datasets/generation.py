@@ -1,9 +1,9 @@
 from nested_pandas import datasets
 
-import dask_nested as dn
+import nested_dask as nd
 
 
-def generate_data(n_base, n_layer, npartitions=1, seed=None) -> dn.NestedFrame:
+def generate_data(n_base, n_layer, npartitions=1, seed=None) -> nd.NestedFrame:
     """Generates a toy dataset.
 
     Docstring copied from nested-pandas.
@@ -28,15 +28,15 @@ def generate_data(n_base, n_layer, npartitions=1, seed=None) -> dn.NestedFrame:
 
     Examples
     --------
-    >>> import dask_nested as dn
-    >>> dn.datasets.generate_data(10,100)
-    >>> dn.datasets.generate_data(10, {"nested_a": 100, "nested_b": 200})
+    >>> import nested_dask as nd
+    >>> nd.datasets.generate_data(10,100)
+    >>> nd.datasets.generate_data(10, {"nested_a": 100, "nested_b": 200})
     """
 
     # Use nested-pandas generator
     base_nf = datasets.generate_data(n_base, n_layer, seed=seed)
 
-    # Convert to dask-nested
-    base_nf = dn.NestedFrame.from_nested_pandas(base_nf).repartition(npartitions=npartitions)
+    # Convert to nested-dask
+    base_nf = nd.NestedFrame.from_nested_pandas(base_nf).repartition(npartitions=npartitions)
 
     return base_nf

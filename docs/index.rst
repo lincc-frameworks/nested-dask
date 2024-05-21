@@ -1,8 +1,8 @@
-.. dask_nested documentation main file.
+.. nested_dask documentation main file.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to dask_nested's documentation!
+Welcome to nested-dask's documentation!
 ========================================================================================
 
 Dev Guide - Getting Started

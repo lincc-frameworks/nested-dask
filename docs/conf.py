@@ -14,10 +14,10 @@ sys.path.insert(0, os.path.abspath("../src/"))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "dask-nested"
+project = "nested-dask"
 copyright = "2023, lincc-frameworks"
 author = "lincc-frameworks"
-release = version("dask-nested")
+release = version("nested-dask")
 # for example take major/minor
 version = ".".join(release.split(".")[:2])
 

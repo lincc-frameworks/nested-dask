@@ -1,12 +1,12 @@
-# dask-nested
+# nested-dask
 
 [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
 
-[![PyPI](https://img.shields.io/pypi/v/dask-nested?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/dask-nested/)
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/dask-nested/smoke-test.yml)](https://github.com/lincc-frameworks/dask-nested/actions/workflows/smoke-test.yml)
-[![Codecov](https://codecov.io/gh/lincc-frameworks/dask-nested/branch/main/graph/badge.svg)](https://codecov.io/gh/lincc-frameworks/dask-nested)
-[![Read The Docs](https://img.shields.io/readthedocs/dask-nested)](https://dask-nested.readthedocs.io/)
-[![Benchmarks](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/dask-nested/asv-main.yml?label=benchmarks)](https://lincc-frameworks.github.io/dask-nested/)
+[![PyPI](https://img.shields.io/pypi/v/nested-dask?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/nested-dask/)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/nested-dask/smoke-test.yml)](https://github.com/lincc-frameworks/nested-dask/actions/workflows/smoke-test.yml)
+[![Codecov](https://codecov.io/gh/lincc-frameworks/nested-dask/branch/main/graph/badge.svg)](https://codecov.io/gh/lincc-frameworks/nested-dask)
+[![Read The Docs](https://img.shields.io/readthedocs/nested-dask)](https://nested-dask.readthedocs.io/)
+[![Benchmarks](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/nested-dask/asv-main.yml?label=benchmarks)](https://lincc-frameworks.github.io/nested-dask/)
 
 This project was automatically generated using the LINCC-Frameworks 
 [python-project-template](https://github.com/lincc-frameworks/python-project-template).

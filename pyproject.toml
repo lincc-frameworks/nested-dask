@@ -1,5 +1,5 @@
 [project]
-name = "dask-nested"
+name = "nested-dask"
 license = {file = "LICENSE"}
 readme = "README.md"
 authors = [
@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Source Code" = "https://github.com/lincc-frameworks/dask-nested"
+"Source Code" = "https://github.com/lincc-frameworks/nested-dask"
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
@@ -47,7 +47,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "src/dask_nested/_version.py"
+write_to = "src/nested_dask/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = [
@@ -107,7 +107,7 @@ ignore = [
     "UP028", # Allow yield in for loop
 ]
 [tool.setuptools.package-data]
-dask_nested = ["py.typed"]
+nested_dask = ["py.typed"]
 
 [tool.coverage.run]
-omit=["src/dask_nested/_version.py"]
+omit=["src/nested_dask/_version.py"]
