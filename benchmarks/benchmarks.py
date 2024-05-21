@@ -6,6 +6,7 @@ https://asv.readthedocs.io/en/stable/writing_benchmarks.html."""
 import dask_nested as dn
 import nested_pandas as npd
 import numpy as np
+import pandas as pd
 
 
 def _generate_benchmark_data(add_nested=True):
@@ -77,7 +78,8 @@ class NestedFrameReduce:
 
     def run(self):
         """Run the benchmark."""
-        self.nf.reduce(np.mean, "nested.flux").compute()
+        meta = pd.Series(name="mean", dtype=float)
+        self.nf.reduce(np.mean, "nested.flux", meta=meta).compute()
 
     def time_run(self):
         """Benchmark the runtime of applying the reduce function"""
