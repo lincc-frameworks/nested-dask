@@ -1,13 +1,13 @@
-import dask_nested as dn
+import nested_dask as nd
 
 
 def test_generate_data():
     """test the dataset generator function"""
 
     # test the seed
-    generate_1 = dn.datasets.generate_data(10, 100, npartitions=2, seed=1)
-    generate_2 = dn.datasets.generate_data(10, 100, npartitions=2, seed=1)
-    generate_3 = dn.datasets.generate_data(10, 100, npartitions=2, seed=2)
+    generate_1 = nd.datasets.generate_data(10, 100, npartitions=2, seed=1)
+    generate_2 = nd.datasets.generate_data(10, 100, npartitions=2, seed=1)
+    generate_3 = nd.datasets.generate_data(10, 100, npartitions=2, seed=2)
 
     assert generate_1.compute().equals(generate_2.compute())
     assert not generate_1.compute().equals(generate_3.compute())

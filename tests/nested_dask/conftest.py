@@ -1,4 +1,4 @@
-import dask_nested as dn
+import nested_dask as nd
 import nested_pandas as npd
 import numpy as np
 import pytest
@@ -23,10 +23,10 @@ def test_dataset():
     }
     layer_nf = npd.NestedFrame(data=layer_data).set_index("index").sort_index()
 
-    base_dn = dn.NestedFrame.from_nested_pandas(base_nf, npartitions=5)
-    layer_dn = dn.NestedFrame.from_nested_pandas(layer_nf, npartitions=10)
+    base_nd = nd.NestedFrame.from_nested_pandas(base_nf, npartitions=5)
+    layer_nd = nd.NestedFrame.from_nested_pandas(layer_nf, npartitions=10)
 
-    return base_dn.add_nested(layer_dn, "nested")
+    return base_nd.add_nested(layer_nd, "nested")
 
 
 @pytest.fixture
@@ -53,10 +53,10 @@ def test_dataset_with_nans():
     }
     layer_nf = npd.NestedFrame(data=layer_data).set_index("index")
 
-    base_dn = dn.NestedFrame.from_nested_pandas(base_nf, npartitions=5)
-    layer_dn = dn.NestedFrame.from_nested_pandas(layer_nf, npartitions=10)
+    base_nd = nd.NestedFrame.from_nested_pandas(base_nf, npartitions=5)
+    layer_nd = nd.NestedFrame.from_nested_pandas(layer_nf, npartitions=10)
 
-    return base_dn.add_nested(layer_dn, "nested")
+    return base_nd.add_nested(layer_nd, "nested")
 
 
 @pytest.fixture
@@ -78,7 +78,7 @@ def test_dataset_no_add_nested():
     }
     layer_nf = npd.NestedFrame(data=layer_data).set_index("index")
 
-    base_dn = dn.NestedFrame.from_nested_pandas(base_nf, npartitions=5)
-    layer_dn = dn.NestedFrame.from_nested_pandas(layer_nf, npartitions=10)
+    base_nd = nd.NestedFrame.from_nested_pandas(base_nf, npartitions=5)
+    layer_nd = nd.NestedFrame.from_nested_pandas(layer_nf, npartitions=10)
 
-    return (base_dn, layer_dn)
+    return (base_nd, layer_nd)

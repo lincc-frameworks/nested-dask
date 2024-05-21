@@ -1,4 +1,4 @@
-import dask_nested as dn
+import nested_dask as nd
 import numpy as np
 import pytest
 from nested_pandas.series.dtype import NestedDtype
@@ -31,7 +31,7 @@ def test_add_nested(test_dataset_no_add_nested):
     base_with_nested = base.add_nested(layer, "nested")
 
     # Check that the result is a nestedframe
-    assert isinstance(base_with_nested, dn.NestedFrame)
+    assert isinstance(base_with_nested, nd.NestedFrame)
 
     # Check that there's a new nested column with the correct dtype
     assert "nested" in base_with_nested.columns
@@ -109,7 +109,7 @@ def test_to_parquet_combined(test_dataset, tmp_path):
     test_dataset.to_parquet(test_save_path, by_layer=False)
 
     # load back from parquet
-    loaded_dataset = dn.read_parquet(test_save_path, calculate_divisions=True)
+    loaded_dataset = nd.read_parquet(test_save_path, calculate_divisions=True)
     # todo: file bug for this and investigate
     loaded_dataset = loaded_dataset.reset_index().set_index("index")
 
@@ -131,8 +131,8 @@ def test_to_parquet_by_layer(test_dataset, tmp_path):
     test_dataset.to_parquet(test_save_path, by_layer=True, write_index=True)
 
     # load back from parquet
-    loaded_base = dn.read_parquet(test_save_path / "base", calculate_divisions=True)
-    loaded_nested = dn.read_parquet(test_save_path / "nested", calculate_divisions=True)
+    loaded_base = nd.read_parquet(test_save_path / "base", calculate_divisions=True)
+    loaded_nested = nd.read_parquet(test_save_path / "nested", calculate_divisions=True)
 
     loaded_dataset = loaded_base.add_nested(loaded_nested, "nested")
 

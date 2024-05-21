@@ -1,5 +1,5 @@
 [project]
-name = "dask-nested"
+name = "nested-dask"
 license = {file = "LICENSE"}
 readme = "README.md"
 authors = [
@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [project.urls]
-"Source Code" = "https://github.com/lincc-frameworks/dask-nested"
+"Source Code" = "https://github.com/lincc-frameworks/nested-dask"
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]

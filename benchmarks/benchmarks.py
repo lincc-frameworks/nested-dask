@@ -3,7 +3,7 @@
 For more information on writing benchmarks:
 https://asv.readthedocs.io/en/stable/writing_benchmarks.html."""
 
-import dask_nested as dn
+import nested_dask as nd
 import nested_pandas as npd
 import numpy as np
 import pandas as pd
@@ -31,8 +31,8 @@ def _generate_benchmark_data(add_nested=True):
     layer_nf = npd.NestedFrame(data=layer_data).set_index("index").sort_index()
 
     # Convert to Dask
-    base_nf = dn.NestedFrame.from_nested_pandas(base_nf).repartition(npartitions=5)
-    layer_nf = dn.NestedFrame.from_nested_pandas(layer_nf).repartition(npartitions=50)
+    base_nf = nd.NestedFrame.from_nested_pandas(base_nf).repartition(npartitions=5)
+    layer_nf = nd.NestedFrame.from_nested_pandas(layer_nf).repartition(npartitions=50)
 
     # Return based on add_nested
     if add_nested:
@@ -47,8 +47,8 @@ class NestedFrameAddNested:
 
     n_base = 100
     layer_size = 1000
-    base_nf = dn.NestedFrame
-    layer_nf = dn.NestedFrame
+    base_nf = nd.NestedFrame
+    layer_nf = nd.NestedFrame
 
     def setup(self):
         """Set up the benchmark environment"""
@@ -70,7 +70,7 @@ class NestedFrameAddNested:
 class NestedFrameReduce:
     """Benchmark the NestedFrame.reduce function"""
 
-    nf = dn.NestedFrame
+    nf = nd.NestedFrame
 
     def setup(self):
         """Set up the benchmark environment"""
@@ -93,7 +93,7 @@ class NestedFrameReduce:
 class NestedFrameQuery:
     """Benchmark the NestedFrame.query function"""
 
-    nf = dn.NestedFrame
+    nf = nd.NestedFrame
 
     def setup(self):
         """Set up the benchmark environment"""

@@ -108,7 +108,7 @@ class NestedFrame(
 
         Returns
         -------
-        `dask_nested.NestedFrame`
+        `nested_dask.NestedFrame`
         """
         return df.map_partitions(npd.NestedFrame)
 
@@ -163,7 +163,7 @@ class NestedFrame(
 
         Returns
         -------
-        `dask_nested.NestedFrame`
+        `nested_dask.NestedFrame`
         """
         nested = nested.map_partitions(lambda x: pack_flat(x)).rename(name)
         return self.join(nested, how=how)

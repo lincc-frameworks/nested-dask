@@ -1,4 +1,4 @@
-import dask_nested as dn
+import nested_dask as nd
 
 
 def test_read_parquet(test_dataset, tmp_path):
@@ -16,8 +16,8 @@ def test_read_parquet(test_dataset, tmp_path):
     test_dataset[["a", "b"]].to_parquet(test_save_path, write_index=True)
 
     # Now read
-    base = dn.read_parquet(test_save_path, calculate_divisions=True)
-    nested = dn.read_parquet(nested_save_path, calculate_divisions=True)
+    base = nd.read_parquet(test_save_path, calculate_divisions=True)
+    nested = nd.read_parquet(nested_save_path, calculate_divisions=True)
 
     base = base.add_nested(nested, "nested")
 
