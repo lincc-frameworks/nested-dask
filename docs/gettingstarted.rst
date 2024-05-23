@@ -3,7 +3,7 @@ Getting Started
 
 These pages will help you install and learn the basics of using nested-dask. If you encounter any issues
 we encourage you to open an issue on the 
-`nested-pandas github repository <https://github.com/lincc-frameworks/nested-dask/issues>`_.
+`nested-dask github repository <https://github.com/lincc-frameworks/nested-dask/issues>`_.
 
 .. toctree::
     :maxdepth: 1
