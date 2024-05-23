@@ -14,6 +14,3 @@ Download code and install dependencies in a conda environment. Run unit tests at
     git clone https://github.com/lincc-frameworks/nested-dask.git
     cd nested-dask/
     bash ./.setup_dev.sh
-
-    pip install pytest
-    pytest
