@@ -2,8 +2,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to nested-dask's documentation!
+Nested-Dask
 ========================================================================================
+
+A `Dask <https://www.dask.org/>`_ extension of 
+`Nested-Pandas <https://nested-pandas.readthedocs.io/en/latest/>`_.
+
+Nested-Pandas is a Pandas extension package that empowers efficient analysis
+of nested associated datasets. This package wraps the majority of the 
+Nested-Pandas API with Dask, which enables easy parallelization and capacity 
+for work at scale.
+
 
 Dev Guide - Getting Started
 ---------------------------
@@ -46,5 +55,6 @@ Notes:
    :hidden:
 
    Home page <self>
+   Getting Started <gettingstarted>
    API Reference <autoapi/index>
-   Notebooks <notebooks>
+   Tutorials <tutorials>

@@ -8,14 +8,15 @@
 [![Read The Docs](https://img.shields.io/readthedocs/nested-dask)](https://nested-dask.readthedocs.io/)
 [![Benchmarks](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/nested-dask/asv-main.yml?label=benchmarks)](https://lincc-frameworks.github.io/nested-dask/)
 
-This project was automatically generated using the LINCC-Frameworks 
-[python-project-template](https://github.com/lincc-frameworks/python-project-template).
+A ![dask](https://www.dask.org/) extension of 
+![nested-pandas](https://nested-pandas.readthedocs.io/en/latest/).
 
-A repository badge was added to show that this project uses the python-project-template, however it's up to
-you whether or not you'd like to display it!
+Nested-pandas is a pandas extension package that empowers efficient analysis
+of nested associated datasets. This package wraps the majority of the 
+nested-pandas API with Dask, which enables easy parallelization and capacity 
+for work at scale.
 
-For more information about the project template see the 
-[documentation](https://lincc-ppt.readthedocs.io/en/latest/).
+
 
 ## Dev Guide - Getting Started
 
