@@ -61,6 +61,8 @@ def generate_parquet_file(n_base, n_layer, path, file_per_layer=True, npartition
         TODO: Currently only True is supported.
         If True, write each layer to its own parquet file. Otherwise, write
         the generated to a single parquet file representing a nested dataset.
+    npartitions : int, default=1
+        The number of Dask partitions to split the generated data into for each layer.
     seed : int, default=None
         A seed to use for random generation of data
 
