@@ -168,7 +168,7 @@ def test_from_epyc():
     object_ndf = object_ndf.add_nested(source_ndf, "ztf_source")
 
     # Apply a mean function
-    meta = pd.Series(name="mean", dtype=float)
+    meta = pd.DataFrame(columns=[0], dtype=float)
     result = object_ndf.reduce(np.mean, "ztf_source.mag", meta=meta).compute()
 
     # just make sure the result was successfully computed
