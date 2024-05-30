@@ -25,13 +25,8 @@ development version of nested-dask, you should instead build 'nested-dask' from 
     git clone https://github.com/lincc-frameworks/nested-dask.git
     cd nested-dask
     pip install .
-    pip install .[dev]  # it may be necessary to use `pip install .'[dev]'` (with single quotes) depending on your machine.
+    pip install '.[dev]'
 
 The ``pip install .[dev]`` command is optional, and installs dependencies needed to run the unit tests and build
 the documentation. The latest source version of nested-dask may be less stable than a release, and so we recommend 
 running the unit test suite to verify that your local install is performing as expected.
-
-.. code-block:: bash
-
-    pip install pytest
-    pytest
