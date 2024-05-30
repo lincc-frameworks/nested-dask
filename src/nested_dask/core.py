@@ -165,7 +165,7 @@ class NestedFrame(
         -------
         `nested_dask.NestedFrame`
         """
-        nested = nested.map_partitions(lambda x: pack_flat(x)).rename(name)
+        nested = nested.map_partitions(lambda x: pack_flat(npd.NestedFrame(x))).rename(name)
         return self.join(nested, how=how)
 
     def query(self, expr) -> Self:  # type: ignore # noqa: F821:
@@ -213,7 +213,7 @@ class NestedFrame(
 
         >>> df.query("mynested.a > 2")
         """
-        return self.map_partitions(lambda x: x.query(expr), meta=self._meta)
+        return self.map_partitions(lambda x: npd.NestedFrame(x).query(expr), meta=self._meta)
 
     def dropna(
         self,
@@ -283,7 +283,7 @@ class NestedFrame(
         """
         # propagate meta, assumes row-based operation
         return self.map_partitions(
-            lambda x: x.dropna(
+            lambda x: npd.NestedFrame(x).dropna(
                 axis=axis,
                 how=how,
                 thresh=thresh,
@@ -332,7 +332,9 @@ class NestedFrame(
         """
 
         # apply nested_pandas reduce via map_partitions
-        return self.map_partitions(lambda x: x.reduce(func, *args, **kwargs), meta=meta)
+        # wrap the partition in a npd.NestedFrame call for:
+        # https://github.com/lincc-frameworks/nested-dask/issues/21
+        return self.map_partitions(lambda x: npd.NestedFrame(x).reduce(func, *args, **kwargs), meta=meta)
 
     def to_parquet(self, path, by_layer=True, **kwargs) -> None:
         """Creates parquet file(s) with the data of a NestedFrame, either
