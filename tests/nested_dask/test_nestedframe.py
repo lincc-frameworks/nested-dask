@@ -89,16 +89,16 @@ def test_reduce(test_dataset):
     def reflect_inputs(*args):
         return args
 
-    res = test_dataset.reduce(reflect_inputs, "a", "nested.t", meta=("inputs", float))
+    res = test_dataset.reduce(reflect_inputs, "a", "nested.t", meta={0: float, 1: float})
 
     assert len(res) == 50
     assert isinstance(res.compute().loc[0][0], float)
     assert isinstance(res.compute().loc[0][1], np.ndarray)
 
-    res2 = test_dataset.reduce(np.mean, "nested.flux", meta=("mean", float))
+    res2 = test_dataset.reduce(np.mean, "nested.flux", meta={0: float})
 
-    assert pytest.approx(res2.compute()[15], 0.1) == 53.635174
-    assert pytest.approx(sum(res2.compute()), 0.1) == 2488.960119
+    assert pytest.approx(res2.compute()[0][15], 0.1) == 53.635174
+    assert pytest.approx(sum(res2.compute()[0]), 0.1) == 2488.960119
 
 
 def test_to_parquet_combined(test_dataset, tmp_path):
@@ -168,7 +168,7 @@ def test_from_epyc():
     object_ndf = object_ndf.add_nested(source_ndf, "ztf_source")
 
     # Apply a mean function
-    meta = pd.Series(name="mean", dtype=float)
+    meta = pd.DataFrame(columns=[0], dtype=float)
     result = object_ndf.reduce(np.mean, "ztf_source.mag", meta=meta).compute()
 
     # just make sure the result was successfully computed

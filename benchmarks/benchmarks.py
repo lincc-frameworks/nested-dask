@@ -78,7 +78,7 @@ class NestedFrameReduce:
 
     def run(self):
         """Run the benchmark."""
-        meta = pd.Series(name="mean", dtype=float)
+        meta = pd.DataFrame(columns=[0], dtype=float)
         self.nf.reduce(np.mean, "nested.flux", meta=meta).compute()
 
     def time_run(self):
