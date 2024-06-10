@@ -309,7 +309,8 @@ class NestedFrame(
         ----------
         func : callable
             Function to apply to each nested dataframe. The first arguments to `func` should be which
-            columns to apply the function to.
+            columns to apply the function to. See the Notes for recommendations
+            on writing func outputs.
         args : positional arguments
             Positional arguments to pass to the function, the first *args should be the names of the
             columns to apply the function to.
@@ -325,10 +326,17 @@ class NestedFrame(
 
         Notes
         -----
-        The recommend return value of func should be a `pd.Series` where the indices are the names of the
-        output columns in the dataframe returned by `reduce`. Note however that in cases where func
-        returns a single value there may be a performance benefit to returning the scalar value
-        rather than a `pd.Series`.
+        By default, `reduce` will produce a `NestedFrame` with enumerated
+        column names for each returned value of the function. For more useful
+        naming, it's recommended to have `func` return a dictionary where each
+        key is an output column of the dataframe returned by `reduce`.
+
+        Example User Function:
+
+        >>> def my_sum(col1, col2):
+        >>>    '''reduce will return a NestedFrame with two columns'''
+        >>>    return {"sum_col1": sum(col1), "sum_col2": sum(col2)}
+
         """
 
         # apply nested_pandas reduce via map_partitions
