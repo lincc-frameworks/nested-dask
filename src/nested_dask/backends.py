@@ -33,6 +33,8 @@ def make_meta_frame(x, index=None) -> npd.NestedFrame:
 def _nonempty_nestedframe(x, index=None) -> npd.NestedFrame:
     """Construct a new NestedFrame with the same underlying data."""
     df = meta_nonempty_dataframe(x)
+    if index is not None:
+        df.index = index
     return npd.NestedFrame(df)
 
 
