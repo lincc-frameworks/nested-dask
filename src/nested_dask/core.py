@@ -98,7 +98,7 @@ class NestedFrame(
         return NestedFrame.from_dask_dataframe(result)
 
     @classmethod
-    def from_dask_dataframe(cls, df) -> NestedFrame:
+    def from_dask_dataframe(cls, df: dd.DataFrame) -> NestedFrame:
         """Converts a Dask Dataframe to a Dask-Nested NestedFrame
 
         Parameters
@@ -110,7 +110,7 @@ class NestedFrame(
         -------
         `nested_dask.NestedFrame`
         """
-        return df.map_partitions(npd.NestedFrame)
+        return df.map_partitions(npd.NestedFrame, meta=npd.NestedFrame(df._meta.copy()))
 
     def compute(self, **kwargs):
         """Compute this Dask collection, returning the underlying dataframe or series."""
