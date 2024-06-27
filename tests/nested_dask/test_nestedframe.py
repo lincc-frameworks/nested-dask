@@ -1,5 +1,5 @@
-import nested_dask as nd
 import dask.dataframe as dd
+import nested_dask as nd
 import numpy as np
 import pandas as pd
 import pytest
@@ -14,13 +14,13 @@ def test_nestedframe_construction(test_dataset):
 
 
 def test_nestedframe_from_dask_keeps_index_name():
+    """test index name is set in from_dask_dataframe"""
     index_name = "test"
     a = pd.DataFrame({"a": [1, 2, 3]})
     a.index.name = index_name
     ddf = dd.from_pandas(a)
     assert ddf.index.name == index_name
     ndf = nd.NestedFrame.from_dask_dataframe(ddf)
-    aa= ndf._meta
     assert isinstance(ndf, nd.NestedFrame)
     assert ndf.index.name == index_name
 
