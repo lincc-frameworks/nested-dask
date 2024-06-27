@@ -1,4 +1,5 @@
 import nested_dask as nd
+import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,6 +11,18 @@ def test_nestedframe_construction(test_dataset):
     assert len(test_dataset) == 50
     assert test_dataset.columns.to_list() == ["a", "b", "nested"]
     assert isinstance(test_dataset["nested"].dtype, NestedDtype)
+
+
+def test_nestedframe_from_dask_keeps_index_name():
+    index_name = "test"
+    a = pd.DataFrame({"a": [1, 2, 3]})
+    a.index.name = index_name
+    ddf = dd.from_pandas(a)
+    assert ddf.index.name == index_name
+    ndf = nd.NestedFrame.from_dask_dataframe(ddf)
+    aa= ndf._meta
+    assert isinstance(ndf, nd.NestedFrame)
+    assert ndf.index.name == index_name
 
 
 def test_all_columns(test_dataset):

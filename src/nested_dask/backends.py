@@ -23,7 +23,9 @@ def make_meta_frame(x, index=None) -> npd.NestedFrame:
     """Create an empty NestedFrame to use as Dask's underlying object meta."""
 
     dtypes = x.dtypes.to_dict()
-    result = npd.NestedFrame({key: pd.Series(dtype=d) for key, d in dtypes.items()})
+    index = index if index is not None else x.index
+    index = index[:0].copy()
+    result = npd.NestedFrame({key: pd.Series(dtype=d) for key, d in dtypes.items()}, index=index)
     return result
 
 
