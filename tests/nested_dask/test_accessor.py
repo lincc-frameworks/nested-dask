@@ -1,6 +1,7 @@
 import pandas as pd
 import pyarrow as pa
 import pytest
+import nested_dask as nd
 
 
 def test_nest_accessor(test_dataset):
@@ -17,6 +18,28 @@ def test_nest_accessor(test_dataset):
 def test_fields(test_dataset):
     """test the fields accessor property"""
     assert test_dataset.nested.nest.fields == ["t", "flux", "band"]
+
+
+def test_to_flat_gen():
+    nf = nd.datasets.generate_data(10, 100, npartitions=2, seed=1)
+
+    flat_nf = nf.nested.nest.to_flat()
+
+    # check dtypes
+    assert flat_nf.dtypes["t"] == pd.ArrowDtype(pa.float64())
+    assert flat_nf.dtypes["flux"] == pd.ArrowDtype(pa.float64())
+    assert flat_nf.dtypes["band"] == pd.ArrowDtype(pa.string())
+
+    # Make sure we retain all rows
+    assert len(flat_nf.loc[1]) == 100
+
+    one_row = flat_nf.compute().iloc[0]
+
+    assert pytest.approx(one_row["t"], 0.01) == 16.0149
+    assert pytest.approx(one_row["flux"], 0.01) == 51.2061
+    assert one_row["band"] == "r"
+
+
 
 
 def test_to_flat(test_dataset):
