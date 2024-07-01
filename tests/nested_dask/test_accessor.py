@@ -31,9 +31,9 @@ def test_to_flat(test_dataset):
     # Make sure we retain all rows
     assert len(flat_ztf.loc[1]) == 500
 
-    one_row = flat_ztf.loc[1].compute().iloc[1]
-    assert pytest.approx(one_row["t"], 0.01) == 5.4584
-    assert pytest.approx(one_row["flux"], 0.01) == 84.1573
+    one_row = flat_ztf.compute().iloc[0]
+    assert pytest.approx(one_row["t"], 0.01) == 6.5329
+    assert pytest.approx(one_row["flux"], 0.01) == 19.0794
     assert one_row["band"] == "r"
 
 
