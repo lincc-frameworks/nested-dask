@@ -1,5 +1,6 @@
 import dask.dataframe as dd
 import nested_dask as nd
+import nested_pandas as npd
 import numpy as np
 import pandas as pd
 import pytest
@@ -186,3 +187,53 @@ def test_from_epyc():
 
     # just make sure the result was successfully computed
     assert len(result) == 9817
+
+
+@pytest.mark.parametrize("pkg", ["pandas", "nested-pandas"])
+@pytest.mark.parametrize("with_nested", [True, False])
+def test_from_pandas(pkg, with_nested):
+    """Test that from_pandas returns a NestedFrame"""
+
+    if pkg == "pandas":
+        df = pd.DataFrame({"a": [1, 2, 3]}, index=[1, 2, 3])
+    elif pkg == "nested-pandas":
+        df = npd.NestedFrame({"a": [1, 2, 3]}, index=[1, 2, 3])
+        if with_nested:
+            nested = npd.NestedFrame({"b": [5, 10, 15, 20, 25, 30]}, index=[1, 1, 2, 2, 3, 3])
+            df = df.add_nested(nested, "nested")
+
+    ndf = nd.NestedFrame.from_pandas(df)
+    assert isinstance(ndf, nd.NestedFrame)
+
+
+@pytest.mark.parametrize("with_nested", [True, False])
+def test_from_delayed(with_nested):
+    """Test that from_delayed returns a NestedFrame"""
+
+    nf = nd.datasets.generate_data(10, 10)
+    if not with_nested:
+        nf = nf.drop("nested", axis=1)
+
+    delayed = nf.to_delayed()
+
+    ndf = nd.NestedFrame.from_delayed(dfs=delayed, meta=nf._meta)
+    assert isinstance(ndf, nd.NestedFrame)
+
+
+def test_from_map(test_dataset, tmp_path):
+    """Test that from_map returns a NestedFrame"""
+
+    # Setup a temporary directory for files
+    test_save_path = tmp_path / "test_dataset"
+
+    # Save Base to Parquet
+    test_dataset[["a", "b"]].to_parquet(test_save_path, write_index=True)
+
+    # Load from_map
+    paths = [
+        tmp_path / "test_dataset" / "0.parquet",
+        tmp_path / "test_dataset" / "1.parquet",
+        tmp_path / "test_dataset" / "2.parquet",
+    ]
+    ndf = nd.NestedFrame.from_map(nd.read_parquet, paths, meta=test_dataset[["a", "b"]]._meta)
+    assert isinstance(ndf, nd.NestedFrame)
