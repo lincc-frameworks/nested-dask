@@ -1,4 +1,5 @@
 import nested_dask as nd
+import pytest
 
 
 def test_generate_data():
@@ -18,3 +19,8 @@ def test_generate_data():
     # test the length
     assert len(generate_1) == 10
     assert len(generate_1.nested.nest.to_flat()) == 1000
+
+    # test seed stability
+    assert pytest.approx(generate_1.compute().loc[0]["a"], 0.1) == 0.417
+    assert pytest.approx(generate_1.compute().loc[0]["b"], 0.1) == 0.838
+    assert pytest.approx(generate_1.nested.nest.to_flat().compute().iloc[0]["t"], 0.1) == 16.015

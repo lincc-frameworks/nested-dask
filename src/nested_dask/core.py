@@ -64,7 +64,7 @@ class NestedFrame(
         return result
 
     @classmethod
-    def from_nested_pandas(
+    def from_pandas(
         cls,
         data,
         npartitions=None,
@@ -72,11 +72,11 @@ class NestedFrame(
         sort=True,
     ) -> NestedFrame:
         """Returns an Nested-Dask NestedFrame constructed from a Nested-Pandas
-        NestedFrame.
+        NestedFrame or Pandas DataFrame.
 
         Parameters
         ----------
-        data: `NestedFrame`
+        data: `NestedFrame` or `DataFrame`
             Nested-Pandas NestedFrame containing the underlying data
         npartitions: `int`, optional
             The number of partitions of the index to create. Note that depending on
@@ -98,7 +98,7 @@ class NestedFrame(
         return NestedFrame.from_dask_dataframe(result)
 
     @classmethod
-    def from_dask_dataframe(cls, df) -> NestedFrame:
+    def from_dask_dataframe(cls, df: dd.DataFrame) -> NestedFrame:
         """Converts a Dask Dataframe to a Dask-Nested NestedFrame
 
         Parameters
@@ -110,7 +110,118 @@ class NestedFrame(
         -------
         `nested_dask.NestedFrame`
         """
-        return df.map_partitions(npd.NestedFrame)
+        return df.map_partitions(npd.NestedFrame, meta=npd.NestedFrame(df._meta.copy()))
+
+    @classmethod
+    def from_delayed(cls, dfs, meta=None, divisions=None, prefix="from-delayed", verify_meta=True):
+        """
+        Create Nested-Dask NestedFrames from many Dask Delayed objects.
+
+        Docstring is copied from `dask.dataframe.from_delayed`.
+
+        Parameters
+        ----------
+        dfs :
+            A ``dask.delayed.Delayed``, a ``distributed.Future``, or an iterable of either
+            of these objects, e.g. returned by ``client.submit``. These comprise the
+            individual partitions of the resulting dataframe.
+            If a single object is provided (not an iterable), then the resulting dataframe
+            will have only one partition.
+        meta:
+            An empty NestedFrame, pd.DataFrame, or pd.Series that matches the dtypes and column names of
+            the output. This metadata is necessary for many algorithms in dask dataframe
+            to work. For ease of use, some alternative inputs are also available. Instead of a
+            DataFrame, a dict of {name: dtype} or iterable of (name, dtype) can be provided (note that
+            the order of the names should match the order of the columns). Instead of a series, a tuple of
+            (name, dtype) can be used. If not provided, dask will try to infer the metadata. This may lead
+            to unexpected results, so providing meta is recommended. For more information, see
+            dask.dataframe.utils.make_meta.
+        divisions :
+            Partition boundaries along the index.
+            For tuple, see https://docs.dask.org/en/latest/dataframe-design.html#partitions
+            For string 'sorted' will compute the delayed values to find index
+            values.  Assumes that the indexes are mutually sorted.
+            If None, then won't use index information
+        prefix :
+            Prefix to prepend to the keys.
+        verify_meta :
+            If True check that the partitions have consistent metadata, defaults to True.
+
+        """
+        nf = dd.from_delayed(dfs=dfs, meta=meta, divisions=divisions, prefix=prefix, verify_meta=verify_meta)
+        return NestedFrame.from_dask_dataframe(nf)
+
+    @classmethod
+    def from_map(
+        cls,
+        func,
+        *iterables,
+        args=None,
+        meta=None,
+        divisions=None,
+        label=None,
+        enforce_metadata=True,
+        **kwargs,
+    ):
+        """
+        Create a DataFrame collection from a custom function map
+
+        WARNING: The ``from_map`` API is experimental, and stability is not
+        yet guaranteed. Use at your own risk!
+
+        Parameters
+        ----------
+        func : callable
+            Function used to create each partition. If ``func`` satisfies the
+            ``DataFrameIOFunction`` protocol, column projection will be enabled.
+        *iterables : Iterable objects
+            Iterable objects to map to each output partition. All iterables must
+            be the same length. This length determines the number of partitions
+            in the output collection (only one element of each iterable will
+            be passed to ``func`` for each partition).
+        args : list or tuple, optional
+            Positional arguments to broadcast to each output partition. Note
+            that these arguments will always be passed to ``func`` after the
+            ``iterables`` positional arguments.
+        meta:
+            An empty NestedFrame, pd.DataFrame, or pd.Series that matches the dtypes and column names of
+            the output. This metadata is necessary for many algorithms in dask dataframe
+            to work. For ease of use, some alternative inputs are also available. Instead of a
+            DataFrame, a dict of {name: dtype} or iterable of (name, dtype) can be provided (note that
+            the order of the names should match the order of the columns). Instead of a series, a tuple of
+            (name, dtype) can be used. If not provided, dask will try to infer the metadata. This may lead
+            to unexpected results, so providing meta is recommended. For more information, see
+            dask.dataframe.utils.make_meta.
+        divisions : tuple, str, optional
+            Partition boundaries along the index.
+            For tuple, see https://docs.dask.org/en/latest/dataframe-design.html#partitions
+            For string 'sorted' will compute the delayed values to find index
+            values.  Assumes that the indexes are mutually sorted.
+            If None, then won't use index information
+        label : str, optional
+            String to use as the function-name label in the output
+            collection-key names.
+        enforce_metadata : bool, default True
+            Whether to enforce at runtime that the structure of the DataFrame
+            produced by ``func`` actually matches the structure of ``meta``.
+            This will rename and reorder columns for each partition,
+            and will raise an error if this doesn't work,
+            but it won't raise if dtypes don't match.
+        **kwargs:
+            Key-word arguments to broadcast to each output partition. These
+            same arguments will be passed to ``func`` for every output partition.
+        """
+        nf = dd.from_map(
+            func,
+            *iterables,
+            args=args,
+            meta=meta,
+            divisions=divisions,
+            label=label,
+            enforce_metadata=enforce_metadata,
+            **kwargs,
+        )
+        return NestedFrame.from_dask_dataframe(nf)
 
     def compute(self, **kwargs):
         """Compute this Dask collection, returning the underlying dataframe or series."""
