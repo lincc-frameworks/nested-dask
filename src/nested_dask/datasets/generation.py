@@ -37,7 +37,7 @@ def generate_data(n_base, n_layer, npartitions=1, seed=None) -> nd.NestedFrame:
     base_nf = datasets.generate_data(n_base, n_layer, seed=seed)
 
     # Convert to nested-dask
-    base_nf = nd.NestedFrame.from_nested_pandas(base_nf).repartition(npartitions=npartitions)
+    base_nf = nd.NestedFrame.from_pandas(base_nf).repartition(npartitions=npartitions)
 
     return base_nf
 
