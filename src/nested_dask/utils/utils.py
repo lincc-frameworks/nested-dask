@@ -35,8 +35,6 @@ def count_nested(df, nested, by=None, join=True) -> NestedFrame:
     if by is not None:
         # will have one column per unique value of the specified column
         # requires some computation to determine these values
-        # TODO: Requires modification of nested-pandas to always produce
-        # sorted output columns for meta
         by_cols = sorted(df[nested].nest.to_flat()[by].unique())
         out_cols = [f"n_{nested}_{col}" for col in by_cols]
     else:
