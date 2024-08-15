@@ -4,6 +4,7 @@ import nested_pandas as npd
 import numpy as np
 import pandas as pd
 import pytest
+from nested_dask.datasets import generate_data
 from nested_pandas.series.dtype import NestedDtype
 
 
@@ -37,6 +38,55 @@ def test_all_columns(test_dataset):
 def test_nested_columns(test_dataset):
     """nested_columns property test"""
     assert test_dataset.nested_columns == ["nested"]
+
+
+def test_getitem_on_nested():
+    """test getitem with nested columns"""
+    ndf = generate_data(10, 10, npartitions=3, seed=1)
+
+    nest_col = ndf["nested.t"]
+
+    assert len(nest_col) == 100
+    assert nest_col.name == "t"
+
+
+def test_set_or_replace_nested_col():
+    """Test that __setitem__ can set or replace a column in a existing nested structure"""
+
+    ndf = generate_data(10, 10, npartitions=3, seed=1)
+
+    # test direct replacement, with ints
+    orig_t_head = ndf["nested.t"].head(10, npartitions=-1)
+
+    ndf["nested.t"] = ndf["nested.t"] + 1
+    assert np.array_equal(ndf["nested.t"].head(10).values.to_numpy(), orig_t_head.values.to_numpy() + 1)
+
+    # test direct replacement, with str
+    ndf["nested.band"] = "lsst"
+    assert np.all(ndf["nested.band"].compute().values.to_numpy() == "lsst")
+
+    # test setting a new column within nested
+    ndf["nested.t_plus_flux"] = ndf["nested.t"] + ndf["nested.flux"]
+
+    true_vals = (ndf["nested.t"] + ndf["nested.flux"]).head(10).values.to_numpy()
+    assert np.array_equal(ndf["nested.t_plus_flux"].head(10).values.to_numpy(), true_vals)
+
+
+def test_set_new_nested_col():
+    """Test that __setitem__ can create a new nested structure"""
+
+    ndf = generate_data(10, 10, npartitions=3, seed=1)
+
+    # assign column in new nested structure from columns in nested
+    ndf["new_nested.t_plus_flux"] = ndf["nested.t"] + ndf["nested.flux"]
+
+    assert "new_nested" in ndf.nested_columns
+    assert "t_plus_flux" in ndf["new_nested"].nest.fields
+
+    assert np.array_equal(
+        ndf["new_nested.t_plus_flux"].compute().values.to_numpy(),
+        ndf["nested.t"].compute().values.to_numpy() + ndf["nested.flux"].compute().values.to_numpy(),
+    )
 
 
 def test_add_nested(test_dataset_no_add_nested):
