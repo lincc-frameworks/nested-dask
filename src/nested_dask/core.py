@@ -5,9 +5,11 @@ import os
 import dask.dataframe as dd
 import dask_expr as dx
 import nested_pandas as npd
+import pandas as pd
+import pyarrow as pa
 from dask_expr._collection import new_collection
 from nested_pandas.series.dtype import NestedDtype
-from nested_pandas.series.packer import pack_flat
+from nested_pandas.series.packer import pack, pack_flat
 from pandas._libs import lib
 from pandas._typing import AnyAll, Axis, IndexLabel
 from pandas.api.extensions import no_default
@@ -59,9 +61,64 @@ class NestedFrame(
 
     _partition_type = npd.NestedFrame  # Tracks the underlying data type
 
-    def __getitem__(self, key):
-        result = super().__getitem__(key)
-        return result
+    def __getitem__(self, item):
+        """Adds custom __getitem__ functionality for nested columns"""
+        if isinstance(item, str) and self._is_known_hierarchical_column(item):
+            nested, col = item.split(".")
+            meta = pd.Series(name=col, dtype=pd.ArrowDtype(self.dtypes[nested].fields[col]))
+            return self.map_partitions(lambda x: x[nested].nest.get_flat_series(col), meta=meta)
+        else:
+            return super().__getitem__(item)
+
+    def _nested_meta_from_flat(self, flat, name):
+        """construct meta for a packed series from a flat dataframe"""
+        pd_fields = flat.dtypes.to_dict()  # grabbing pandas dtypes
+        pyarrow_fields = {}  # grab underlying pyarrow dtypes
+        for field, dtype in pd_fields.items():
+            if hasattr(dtype, "pyarrow_dtype"):
+                pyarrow_fields[field] = dtype.pyarrow_dtype
+            else:  # or convert from numpy types
+                pyarrow_fields[field] = pa.from_numpy_dtype(dtype)
+        return pd.Series(name=name, dtype=NestedDtype.from_fields(pyarrow_fields))
+
+    def __setitem__(self, key, value):
+        """Adds custom __setitem__ behavior for nested columns"""
+
+        # Replacing or adding columns to a nested structure
+        # Allows statements like ndf["nested.t"] = ndf["nested.t"] - 5
+        # Or ndf["nested.base_t"] = ndf["nested.t"] - 5
+        # Performance note: This requires building a new nested structure
+        if self._is_known_hierarchical_column(key) or (
+            "." in key and key.split(".")[0] in self.nested_columns
+        ):
+            nested, col = key.split(".")
+
+            # View the nested column as a flat df
+            new_flat = self[nested].nest.to_flat()
+            new_flat[col] = value
+
+            # Handle strings specially
+            if isinstance(value, str):
+                new_flat = new_flat.astype({col: pd.ArrowDtype(pa.string())})
+
+            # pack the modified df back into a nested column
+            meta = self._nested_meta_from_flat(new_flat, nested)
+            packed = new_flat.map_partitions(lambda x: pack(x), meta=meta)
+            return super().__setitem__(nested, packed)
+
+        # Adding a new nested structure from a column
+        # Allows statements like ndf["new_nested.t"] = ndf["nested.t"] - 5
+        elif "." in key:
+            new_nested, col = key.split(".")
+            if isinstance(value, dd.Series):
+                value.name = col
+                value = value.to_frame()
+
+            meta = self._nested_meta_from_flat(value, new_nested)
+            packed = value.map_partitions(lambda x: pack(x), meta=meta)
+            return super().__setitem__(new_nested, packed)
+
+        return super().__setitem__(key, value)
 
     @classmethod
     def from_pandas(
@@ -245,6 +302,15 @@ class NestedFrame(
             if isinstance(self[column].dtype, NestedDtype):
                 nest_cols.append(column)
         return nest_cols
+
+    def _is_known_hierarchical_column(self, colname) -> bool:
+        """Determine whether a string is a known hierarchical column name"""
+        if "." in colname:
+            left, right = colname.split(".")
+            if left in self.nested_columns:
+                return right in self.all_columns[left]
+            return False
+        return False
 
     def add_nested(self, nested, name, how="outer") -> NestedFrame:  # type: ignore[name-defined] # noqa: F821
         """Packs a dataframe into a nested column
