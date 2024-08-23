@@ -46,6 +46,18 @@ class _Frame(dx.FrameBase):  # type: ignore
         return collection
 
 
+def _nested_meta_from_flat(flat, name):
+    """construct meta for a packed series from a flat dataframe"""
+    pd_fields = flat.dtypes.to_dict()  # grabbing pandas dtypes
+    pyarrow_fields = {}  # grab underlying pyarrow dtypes
+    for field, dtype in pd_fields.items():
+        if hasattr(dtype, "pyarrow_dtype"):
+            pyarrow_fields[field] = dtype.pyarrow_dtype
+        else:  # or convert from numpy types
+            pyarrow_fields[field] = pa.from_numpy_dtype(dtype)
+    return pd.Series(name=name, dtype=NestedDtype.from_fields(pyarrow_fields))
+
+
 class NestedFrame(
     _Frame, dd.DataFrame
 ):  # can use dd.DataFrame instead of dx.DataFrame if the config is set true (default in >=2024.3.0)
@@ -70,17 +82,6 @@ class NestedFrame(
         else:
             return super().__getitem__(item)
 
-    def _nested_meta_from_flat(self, flat, name):
-        """construct meta for a packed series from a flat dataframe"""
-        pd_fields = flat.dtypes.to_dict()  # grabbing pandas dtypes
-        pyarrow_fields = {}  # grab underlying pyarrow dtypes
-        for field, dtype in pd_fields.items():
-            if hasattr(dtype, "pyarrow_dtype"):
-                pyarrow_fields[field] = dtype.pyarrow_dtype
-            else:  # or convert from numpy types
-                pyarrow_fields[field] = pa.from_numpy_dtype(dtype)
-        return pd.Series(name=name, dtype=NestedDtype.from_fields(pyarrow_fields))
-
     def __setitem__(self, key, value):
         """Adds custom __setitem__ behavior for nested columns"""
 
@@ -102,7 +103,7 @@ class NestedFrame(
                 new_flat = new_flat.astype({col: pd.ArrowDtype(pa.string())})
 
             # pack the modified df back into a nested column
-            meta = self._nested_meta_from_flat(new_flat, nested)
+            meta = _nested_meta_from_flat(new_flat, nested)
             packed = new_flat.map_partitions(lambda x: pack(x), meta=meta)
             return super().__setitem__(nested, packed)
 
@@ -114,7 +115,7 @@ class NestedFrame(
                 value.name = col
                 value = value.to_frame()
 
-            meta = self._nested_meta_from_flat(value, new_nested)
+            meta = _nested_meta_from_flat(value, new_nested)
             packed = value.map_partitions(lambda x: pack(x), meta=meta)
             return super().__setitem__(new_nested, packed)
 
@@ -279,6 +280,59 @@ class NestedFrame(
             **kwargs,
         )
         return NestedFrame.from_dask_dataframe(nf)
+
+    @classmethod
+    def from_flat(cls, df, base_columns, nested_columns=None, index=None, name="nested"):
+        """Creates a NestedFrame with base and nested columns from a flat
+        dataframe.
+
+        Parameters
+        ----------
+        df: pd.DataFrame or NestedFrame
+            A flat dataframe.
+        base_columns: list-like
+            The columns that should be used as base (flat) columns in the
+            output dataframe.
+        nested_columns: list-like, or None
+            The columns that should be packed into a nested column. All columns
+            in the list will attempt to be packed into a single nested column
+            with the name provided in `nested_name`. If None, is defined as all
+            columns not in `base_columns`.
+        index: str, or None
+            The name of a column to use as the new index. Typically, the index
+            should have a unique value per row for base columns, and should
+            repeat for nested columns. For example, a dataframe with two
+            columns; a=[1,1,1,2,2,2] and b=[5,10,15,20,25,30] would want an
+            index like [0,0,0,1,1,1] if a is chosen as a base column. If not
+            provided the current index will be used.
+        name:
+            The name of the output column the `nested_columns` are packed into.
+
+        Returns
+        -------
+        NestedFrame
+            A NestedFrame with the specified nesting structure.
+        """
+        # Handle the meta
+        # Pathway 1: Some base columns and one nested column -> nestedframe
+        # Pathway 2: Only a single nested column -> nestedframe as defined in npd
+        # Pathway 3: Only a set of base columns, technically possible -> nestedframe
+
+        if nested_columns is None:
+            nested_columns = [col for col in df.columns if (col not in base_columns) and col != index]
+
+        meta = npd.NestedFrame(df[base_columns]._meta)
+
+        if len(nested_columns) > 0:
+            nested_meta = _nested_meta_from_flat(df[nested_columns], name)
+            meta = meta.join(nested_meta)
+
+        return df.map_partitions(
+            lambda x: npd.NestedFrame.from_flat(
+                df=x, base_columns=base_columns, nested_columns=nested_columns, index=index, name=name
+            ),
+            meta=meta,
+        )
 
     def compute(self, **kwargs):
         """Compute this Dask collection, returning the underlying dataframe or series."""
