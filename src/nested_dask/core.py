@@ -377,9 +377,6 @@ class NestedFrame(
 
         """
 
-        # Handle meta
-        # meta = npd.NestedFrame(df[base_columns]._meta)
-
         # Resolve inputs for meta
         if base_columns is None:
             if list_columns is None:
