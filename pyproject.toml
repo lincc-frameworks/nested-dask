@@ -16,7 +16,7 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.9"
 dependencies = [
-    'nested-pandas==0.1.3',
+    'nested-pandas==0.2.0',
     'numpy',
     'dask>=2024.3.0',
     'dask[distributed]>=2024.3.0',
