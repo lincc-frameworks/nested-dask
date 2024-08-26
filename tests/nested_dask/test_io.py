@@ -1,4 +1,6 @@
 import nested_dask as nd
+import pandas as pd
+import pyarrow as pa
 
 
 def test_read_parquet(test_dataset, tmp_path):
@@ -19,6 +21,8 @@ def test_read_parquet(test_dataset, tmp_path):
     base = nd.read_parquet(test_save_path, calculate_divisions=True)
     nested = nd.read_parquet(nested_save_path, calculate_divisions=True)
 
+    # this is read as a large_string, just make it a string
+    nested = nested.astype({"band": pd.ArrowDtype(pa.string())})
     base = base.add_nested(nested, "nested")
 
     # Check the loaded dataset against the original

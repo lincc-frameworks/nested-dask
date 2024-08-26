@@ -288,7 +288,7 @@ class NestedFrame(
 
         Parameters
         ----------
-        df: pd.DataFrame or NestedFrame
+        df: dd.DataFrame or nd.NestedFrame
             A flat dataframe.
         base_columns: list-like
             The columns that should be used as base (flat) columns in the
@@ -313,15 +313,12 @@ class NestedFrame(
         NestedFrame
             A NestedFrame with the specified nesting structure.
         """
-        # Handle the meta
-        # Pathway 1: Some base columns and one nested column -> nestedframe
-        # Pathway 2: Only a single nested column -> nestedframe as defined in npd
-        # Pathway 3: Only a set of base columns, technically possible -> nestedframe
+
+        # Handle meta
+        meta = npd.NestedFrame(df[base_columns]._meta)
 
         if nested_columns is None:
             nested_columns = [col for col in df.columns if (col not in base_columns) and col != index]
-
-        meta = npd.NestedFrame(df[base_columns]._meta)
 
         if len(nested_columns) > 0:
             nested_meta = _nested_meta_from_flat(df[nested_columns], name)
@@ -330,6 +327,97 @@ class NestedFrame(
         return df.map_partitions(
             lambda x: npd.NestedFrame.from_flat(
                 df=x, base_columns=base_columns, nested_columns=nested_columns, index=index, name=name
+            ),
+            meta=meta,
+        )
+
+    @classmethod
+    def from_lists(cls, df, base_columns=None, list_columns=None, name="nested"):
+        """Creates a NestedFrame with base and nested columns from a flat
+        dataframe.
+
+        Parameters
+        ----------
+        df: dd.DataFrame or nd.NestedFrame
+            A dataframe with list columns.
+        base_columns: list-like, or None
+            Any columns that have non-list values in the input df. These will
+            simply be kept as identical columns in the result
+        list_columns: list-like, or None
+            The list-value columns that should be packed into a nested column.
+            All columns in the list will attempt to be packed into a single
+            nested column with the name provided in `nested_name`. All columns
+            in list_columns must have pyarrow list dtypes, otherwise the
+            operation will fail. If None, is defined as all columns not in
+            `base_columns`.
+        name:
+            The name of the output column the `nested_columns` are packed into.
+
+        Returns
+        -------
+        NestedFrame
+            A NestedFrame with the specified nesting structure.
+
+        Note
+        ----
+        As noted above, all columns in `list_columns` must have a pyarrow
+        ListType dtype. This is needed for proper meta propagation. To convert
+        a list column to this dtype, you can use this command structure:
+        `nf= nf.astype({"colname": pd.ArrowDtype(pa.list_(pa.int64()))})`
+
+        Where pa.int64 above should be replaced with the correct dtype of the
+        underlying data accordingly.
+
+        Additionally, it's a known issue in Dask
+        (https://github.com/dask/dask/issues/10139) that columns with list
+        values will by default be converted to the string type. This will
+        interfere with the ability to recast these to pyarrow lists. We
+        recommend setting the following dask config setting to prevent this:
+        `dask.config.set({"dataframe.convert-string":False})`
+
+        """
+
+        # Handle meta
+        # meta = npd.NestedFrame(df[base_columns]._meta)
+
+        # Resolve inputs for meta
+        if base_columns is None:
+            if list_columns is None:
+                # with no inputs, assume all columns are list-valued
+                list_columns = df.columns
+            else:
+                # if list_columns are defined, assume everything else is base
+                base_columns = [col for col in df.columns if col not in list_columns]
+        else:
+            if list_columns is None:
+                # with defined base_columns, assume everything else is list
+                list_columns = [col for col in df.columns if col not in base_columns]
+
+        # from_lists should have at least one list column defined
+        if len(list_columns) == 0:
+            raise ValueError("No columns were assigned as list columns.")
+        else:
+            # reject any list columns that are not pyarrow dtyped
+            for col in list_columns:
+                if not hasattr(df[col].dtype, "pyarrow_dtype"):
+                    raise TypeError(
+                        f"""List column '{col}' dtype ({df[col].dtype}) is not a pyarrow list dtype.
+Refer to the docstring for guidance on dtype requirements and assignment."""
+                    )
+                elif not pa.types.is_list(df[col].dtype.pyarrow_dtype):
+                    raise TypeError(
+                        f"""List column '{col}' dtype ({df[col].dtype}) is not a pyarrow list dtype.
+Refer to the docstring for guidance on dtype requirements and assignment."""
+                    )
+
+        meta = npd.NestedFrame(df[base_columns]._meta)
+
+        nested_meta = _nested_meta_from_flat(df[list_columns], name)
+        meta = meta.join(nested_meta)
+
+        return df.map_partitions(
+            lambda x: npd.NestedFrame.from_lists(
+                df=x, base_columns=base_columns, list_columns=list_columns, name=name
             ),
             meta=meta,
         )
