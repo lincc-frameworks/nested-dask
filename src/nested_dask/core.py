@@ -104,7 +104,7 @@ class NestedFrame(
 
             # pack the modified df back into a nested column
             meta = _nested_meta_from_flat(new_flat, nested)
-            packed = new_flat.map_partitions(lambda x: pack(x), meta=meta)
+            packed = new_flat.map_partitions(lambda x: pack(x, dtype=meta.dtype), meta=meta)
             return super().__setitem__(nested, packed)
 
         # Adding a new nested structure from a column
@@ -116,7 +116,7 @@ class NestedFrame(
                 value = value.to_frame()
 
             meta = _nested_meta_from_flat(value, new_nested)
-            packed = value.map_partitions(lambda x: pack(x), meta=meta)
+            packed = value.map_partitions(lambda x: pack(x, dtype=meta.dtype), meta=meta)
             return super().__setitem__(new_nested, packed)
 
         return super().__setitem__(key, value)
@@ -321,7 +321,8 @@ class NestedFrame(
             nested_columns = [col for col in df.columns if (col not in base_columns) and col != index]
 
         if len(nested_columns) > 0:
-            nested_meta = _nested_meta_from_flat(df[nested_columns], name)
+            # nested_meta = _nested_meta_from_flat(df[nested_columns], name)
+            nested_meta = pack(df[nested_columns]._meta, name)
             meta = meta.join(nested_meta)
 
         return df.map_partitions(
@@ -409,7 +410,8 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
 
         meta = npd.NestedFrame(df[base_columns]._meta)
 
-        nested_meta = _nested_meta_from_flat(df[list_columns], name)
+        # nested_meta = _nested_meta_from_flat(df[list_columns], name)
+        nested_meta = pack(df[list_columns]._meta, name)
         meta = meta.join(nested_meta)
 
         return df.map_partitions(
