@@ -321,7 +321,6 @@ class NestedFrame(
             nested_columns = [col for col in df.columns if (col not in base_columns) and col != index]
 
         if len(nested_columns) > 0:
-            # nested_meta = _nested_meta_from_flat(df[nested_columns], name)
             nested_meta = pack(df[nested_columns]._meta, name)
             meta = meta.join(nested_meta)
 
@@ -410,7 +409,6 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
 
         meta = npd.NestedFrame(df[base_columns]._meta)
 
-        # nested_meta = _nested_meta_from_flat(df[list_columns], name)
         nested_meta = pack(df[list_columns]._meta, name)
         meta = meta.join(nested_meta)
 
