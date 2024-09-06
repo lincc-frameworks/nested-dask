@@ -8,8 +8,8 @@
 [![Read The Docs](https://img.shields.io/readthedocs/nested-dask)](https://nested-dask.readthedocs.io/)
 [![Benchmarks](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/nested-dask/asv-main.yml?label=benchmarks)](https://lincc-frameworks.github.io/nested-dask/)
 
-A ![dask](https://www.dask.org/) extension of 
-![nested-pandas](https://nested-pandas.readthedocs.io/en/latest/).
+A [dask](https://www.dask.org/) extension of 
+[nested-pandas](https://nested-pandas.readthedocs.io/en/latest/).
 
 Nested-pandas is a pandas extension package that empowers efficient analysis
 of nested associated datasets. This package wraps the majority of the 

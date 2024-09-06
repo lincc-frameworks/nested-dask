@@ -5,9 +5,11 @@ import os
 import dask.dataframe as dd
 import dask_expr as dx
 import nested_pandas as npd
+import pandas as pd
+import pyarrow as pa
 from dask_expr._collection import new_collection
 from nested_pandas.series.dtype import NestedDtype
-from nested_pandas.series.packer import pack_flat
+from nested_pandas.series.packer import pack, pack_flat
 from pandas._libs import lib
 from pandas._typing import AnyAll, Axis, IndexLabel
 from pandas.api.extensions import no_default
@@ -44,6 +46,18 @@ class _Frame(dx.FrameBase):  # type: ignore
         return collection
 
 
+def _nested_meta_from_flat(flat, name):
+    """construct meta for a packed series from a flat dataframe"""
+    pd_fields = flat.dtypes.to_dict()  # grabbing pandas dtypes
+    pyarrow_fields = {}  # grab underlying pyarrow dtypes
+    for field, dtype in pd_fields.items():
+        if hasattr(dtype, "pyarrow_dtype"):
+            pyarrow_fields[field] = dtype.pyarrow_dtype
+        else:  # or convert from numpy types
+            pyarrow_fields[field] = pa.from_numpy_dtype(dtype)
+    return pd.Series(name=name, dtype=NestedDtype.from_fields(pyarrow_fields))
+
+
 class NestedFrame(
     _Frame, dd.DataFrame
 ):  # can use dd.DataFrame instead of dx.DataFrame if the config is set true (default in >=2024.3.0)
@@ -59,12 +73,56 @@ class NestedFrame(
 
     _partition_type = npd.NestedFrame  # Tracks the underlying data type
 
-    def __getitem__(self, key):
-        result = super().__getitem__(key)
-        return result
+    def __getitem__(self, item):
+        """Adds custom __getitem__ functionality for nested columns"""
+        if isinstance(item, str) and self._is_known_hierarchical_column(item):
+            nested, col = item.split(".")
+            meta = pd.Series(name=col, dtype=pd.ArrowDtype(self.dtypes[nested].fields[col]))
+            return self.map_partitions(lambda x: x[nested].nest.get_flat_series(col), meta=meta)
+        else:
+            return super().__getitem__(item)
+
+    def __setitem__(self, key, value):
+        """Adds custom __setitem__ behavior for nested columns"""
+
+        # Replacing or adding columns to a nested structure
+        # Allows statements like ndf["nested.t"] = ndf["nested.t"] - 5
+        # Or ndf["nested.base_t"] = ndf["nested.t"] - 5
+        # Performance note: This requires building a new nested structure
+        if self._is_known_hierarchical_column(key) or (
+            "." in key and key.split(".")[0] in self.nested_columns
+        ):
+            nested, col = key.split(".")
+
+            # View the nested column as a flat df
+            new_flat = self[nested].nest.to_flat()
+            new_flat[col] = value
+
+            # Handle strings specially
+            if isinstance(value, str):
+                new_flat = new_flat.astype({col: pd.ArrowDtype(pa.string())})
+
+            # pack the modified df back into a nested column
+            meta = _nested_meta_from_flat(new_flat, nested)
+            packed = new_flat.map_partitions(lambda x: pack(x, dtype=meta.dtype), meta=meta)
+            return super().__setitem__(nested, packed)
+
+        # Adding a new nested structure from a column
+        # Allows statements like ndf["new_nested.t"] = ndf["nested.t"] - 5
+        elif "." in key:
+            new_nested, col = key.split(".")
+            if isinstance(value, dd.Series):
+                value.name = col
+                value = value.to_frame()
+
+            meta = _nested_meta_from_flat(value, new_nested)
+            packed = value.map_partitions(lambda x: pack(x, dtype=meta.dtype), meta=meta)
+            return super().__setitem__(new_nested, packed)
+
+        return super().__setitem__(key, value)
 
     @classmethod
-    def from_nested_pandas(
+    def from_pandas(
         cls,
         data,
         npartitions=None,
@@ -72,11 +130,11 @@ class NestedFrame(
         sort=True,
     ) -> NestedFrame:
         """Returns an Nested-Dask NestedFrame constructed from a Nested-Pandas
-        NestedFrame.
+        NestedFrame or Pandas DataFrame.
 
         Parameters
         ----------
-        data: `NestedFrame`
+        data: `NestedFrame` or `DataFrame`
             Nested-Pandas NestedFrame containing the underlying data
         npartitions: `int`, optional
             The number of partitions of the index to create. Note that depending on
@@ -112,6 +170,255 @@ class NestedFrame(
         """
         return df.map_partitions(npd.NestedFrame, meta=npd.NestedFrame(df._meta.copy()))
 
+    @classmethod
+    def from_delayed(cls, dfs, meta=None, divisions=None, prefix="from-delayed", verify_meta=True):
+        """
+        Create Nested-Dask NestedFrames from many Dask Delayed objects.
+
+        Docstring is copied from `dask.dataframe.from_delayed`.
+
+        Parameters
+        ----------
+        dfs :
+            A ``dask.delayed.Delayed``, a ``distributed.Future``, or an iterable of either
+            of these objects, e.g. returned by ``client.submit``. These comprise the
+            individual partitions of the resulting dataframe.
+            If a single object is provided (not an iterable), then the resulting dataframe
+            will have only one partition.
+        meta:
+            An empty NestedFrame, pd.DataFrame, or pd.Series that matches the dtypes and column names of
+            the output. This metadata is necessary for many algorithms in dask dataframe
+            to work. For ease of use, some alternative inputs are also available. Instead of a
+            DataFrame, a dict of {name: dtype} or iterable of (name, dtype) can be provided (note that
+            the order of the names should match the order of the columns). Instead of a series, a tuple of
+            (name, dtype) can be used. If not provided, dask will try to infer the metadata. This may lead
+            to unexpected results, so providing meta is recommended. For more information, see
+            dask.dataframe.utils.make_meta.
+        divisions :
+            Partition boundaries along the index.
+            For tuple, see https://docs.dask.org/en/latest/dataframe-design.html#partitions
+            For string 'sorted' will compute the delayed values to find index
+            values.  Assumes that the indexes are mutually sorted.
+            If None, then won't use index information
+        prefix :
+            Prefix to prepend to the keys.
+        verify_meta :
+            If True check that the partitions have consistent metadata, defaults to True.
+
+        """
+        nf = dd.from_delayed(dfs=dfs, meta=meta, divisions=divisions, prefix=prefix, verify_meta=verify_meta)
+        return NestedFrame.from_dask_dataframe(nf)
+
+    @classmethod
+    def from_map(
+        cls,
+        func,
+        *iterables,
+        args=None,
+        meta=None,
+        divisions=None,
+        label=None,
+        enforce_metadata=True,
+        **kwargs,
+    ):
+        """
+        Create a DataFrame collection from a custom function map
+
+        WARNING: The ``from_map`` API is experimental, and stability is not
+        yet guaranteed. Use at your own risk!
+
+        Parameters
+        ----------
+        func : callable
+            Function used to create each partition. If ``func`` satisfies the
+            ``DataFrameIOFunction`` protocol, column projection will be enabled.
+        *iterables : Iterable objects
+            Iterable objects to map to each output partition. All iterables must
+            be the same length. This length determines the number of partitions
+            in the output collection (only one element of each iterable will
+            be passed to ``func`` for each partition).
+        args : list or tuple, optional
+            Positional arguments to broadcast to each output partition. Note
+            that these arguments will always be passed to ``func`` after the
+            ``iterables`` positional arguments.
+        meta:
+            An empty NestedFrame, pd.DataFrame, or pd.Series that matches the dtypes and column names of
+            the output. This metadata is necessary for many algorithms in dask dataframe
+            to work. For ease of use, some alternative inputs are also available. Instead of a
+            DataFrame, a dict of {name: dtype} or iterable of (name, dtype) can be provided (note that
+            the order of the names should match the order of the columns). Instead of a series, a tuple of
+            (name, dtype) can be used. If not provided, dask will try to infer the metadata. This may lead
+            to unexpected results, so providing meta is recommended. For more information, see
+            dask.dataframe.utils.make_meta.
+        divisions : tuple, str, optional
+            Partition boundaries along the index.
+            For tuple, see https://docs.dask.org/en/latest/dataframe-design.html#partitions
+            For string 'sorted' will compute the delayed values to find index
+            values.  Assumes that the indexes are mutually sorted.
+            If None, then won't use index information
+        label : str, optional
+            String to use as the function-name label in the output
+            collection-key names.
+        enforce_metadata : bool, default True
+            Whether to enforce at runtime that the structure of the DataFrame
+            produced by ``func`` actually matches the structure of ``meta``.
+            This will rename and reorder columns for each partition,
+            and will raise an error if this doesn't work,
+            but it won't raise if dtypes don't match.
+        **kwargs:
+            Key-word arguments to broadcast to each output partition. These
+            same arguments will be passed to ``func`` for every output partition.
+        """
+        nf = dd.from_map(
+            func,
+            *iterables,
+            args=args,
+            meta=meta,
+            divisions=divisions,
+            label=label,
+            enforce_metadata=enforce_metadata,
+            **kwargs,
+        )
+        return NestedFrame.from_dask_dataframe(nf)
+
+    @classmethod
+    def from_flat(cls, df, base_columns, nested_columns=None, index=None, name="nested"):
+        """Creates a NestedFrame with base and nested columns from a flat
+        dataframe.
+
+        Parameters
+        ----------
+        df: dd.DataFrame or nd.NestedFrame
+            A flat dataframe.
+        base_columns: list-like
+            The columns that should be used as base (flat) columns in the
+            output dataframe.
+        nested_columns: list-like, or None
+            The columns that should be packed into a nested column. All columns
+            in the list will attempt to be packed into a single nested column
+            with the name provided in `nested_name`. If None, is defined as all
+            columns not in `base_columns`.
+        index: str, or None
+            The name of a column to use as the new index. Typically, the index
+            should have a unique value per row for base columns, and should
+            repeat for nested columns. For example, a dataframe with two
+            columns; a=[1,1,1,2,2,2] and b=[5,10,15,20,25,30] would want an
+            index like [0,0,0,1,1,1] if a is chosen as a base column. If not
+            provided the current index will be used.
+        name:
+            The name of the output column the `nested_columns` are packed into.
+
+        Returns
+        -------
+        NestedFrame
+            A NestedFrame with the specified nesting structure.
+        """
+
+        # Handle meta
+        meta = npd.NestedFrame(df[base_columns]._meta)
+
+        if nested_columns is None:
+            nested_columns = [col for col in df.columns if (col not in base_columns) and col != index]
+
+        if len(nested_columns) > 0:
+            nested_meta = pack(df[nested_columns]._meta, name)
+            meta = meta.join(nested_meta)
+
+        return df.map_partitions(
+            lambda x: npd.NestedFrame.from_flat(
+                df=x, base_columns=base_columns, nested_columns=nested_columns, index=index, name=name
+            ),
+            meta=meta,
+        )
+
+    @classmethod
+    def from_lists(cls, df, base_columns=None, list_columns=None, name="nested"):
+        """Creates a NestedFrame with base and nested columns from a flat
+        dataframe.
+
+        Parameters
+        ----------
+        df: dd.DataFrame or nd.NestedFrame
+            A dataframe with list columns.
+        base_columns: list-like, or None
+            Any columns that have non-list values in the input df. These will
+            simply be kept as identical columns in the result
+        list_columns: list-like, or None
+            The list-value columns that should be packed into a nested column.
+            All columns in the list will attempt to be packed into a single
+            nested column with the name provided in `nested_name`. All columns
+            in list_columns must have pyarrow list dtypes, otherwise the
+            operation will fail. If None, is defined as all columns not in
+            `base_columns`.
+        name:
+            The name of the output column the `nested_columns` are packed into.
+
+        Returns
+        -------
+        NestedFrame
+            A NestedFrame with the specified nesting structure.
+
+        Note
+        ----
+        As noted above, all columns in `list_columns` must have a pyarrow
+        ListType dtype. This is needed for proper meta propagation. To convert
+        a list column to this dtype, you can use this command structure:
+        `nf= nf.astype({"colname": pd.ArrowDtype(pa.list_(pa.int64()))})`
+
+        Where pa.int64 above should be replaced with the correct dtype of the
+        underlying data accordingly.
+
+        Additionally, it's a known issue in Dask
+        (https://github.com/dask/dask/issues/10139) that columns with list
+        values will by default be converted to the string type. This will
+        interfere with the ability to recast these to pyarrow lists. We
+        recommend setting the following dask config setting to prevent this:
+        `dask.config.set({"dataframe.convert-string":False})`
+
+        """
+
+        # Resolve inputs for meta
+        if base_columns is None:
+            if list_columns is None:
+                # with no inputs, assume all columns are list-valued
+                list_columns = df.columns
+            else:
+                # if list_columns are defined, assume everything else is base
+                base_columns = [col for col in df.columns if col not in list_columns]
+        else:
+            if list_columns is None:
+                # with defined base_columns, assume everything else is list
+                list_columns = [col for col in df.columns if col not in base_columns]
+
+        # from_lists should have at least one list column defined
+        if len(list_columns) == 0:
+            raise ValueError("No columns were assigned as list columns.")
+        else:
+            # reject any list columns that are not pyarrow dtyped
+            for col in list_columns:
+                if not hasattr(df[col].dtype, "pyarrow_dtype"):
+                    raise TypeError(
+                        f"""List column '{col}' dtype ({df[col].dtype}) is not a pyarrow list dtype.
+Refer to the docstring for guidance on dtype requirements and assignment."""
+                    )
+                elif not pa.types.is_list(df[col].dtype.pyarrow_dtype):
+                    raise TypeError(
+                        f"""List column '{col}' dtype ({df[col].dtype}) is not a pyarrow list dtype.
+Refer to the docstring for guidance on dtype requirements and assignment."""
+                    )
+
+        meta = npd.NestedFrame(df[base_columns]._meta)
+
+        nested_meta = pack(df[list_columns]._meta, name)
+        meta = meta.join(nested_meta)
+
+        return df.map_partitions(
+            lambda x: npd.NestedFrame.from_lists(
+                df=x, base_columns=base_columns, list_columns=list_columns, name=name
+            ),
+            meta=meta,
+        )
+
     def compute(self, **kwargs):
         """Compute this Dask collection, returning the underlying dataframe or series."""
         return npd.NestedFrame(super().compute(**kwargs))
@@ -134,6 +441,15 @@ class NestedFrame(
             if isinstance(self[column].dtype, NestedDtype):
                 nest_cols.append(column)
         return nest_cols
+
+    def _is_known_hierarchical_column(self, colname) -> bool:
+        """Determine whether a string is a known hierarchical column name"""
+        if "." in colname:
+            left, right = colname.split(".")
+            if left in self.nested_columns:
+                return right in self.all_columns[left]
+            return False
+        return False
 
     def add_nested(self, nested, name, how="outer") -> NestedFrame:  # type: ignore[name-defined] # noqa: F821
         """Packs a dataframe into a nested column
