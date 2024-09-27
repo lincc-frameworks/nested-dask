@@ -327,14 +327,14 @@ def test_reduce_output_type(meta):
 
     if meta == "df":
 
-        def mean_arr(b, arr): # type: ignore
-            return {"b": b, "mean": np.mean(arr)} # type: ignore
+        def mean_arr(b, arr):  # type: ignore
+            return {"b": b, "mean": np.mean(arr)}  # type: ignore
 
         reduced = nddf.reduce(mean_arr, "b", "test.a", meta={"b": int, "mean": float})
     elif meta == "series":
 
-        def mean_arr(arr): # type: ignore
-            return np.mean(arr) # type: ignore
+        def mean_arr(arr):  # type: ignore
+            return np.mean(arr)  # type: ignore
 
         reduced = nddf.reduce(mean_arr, "test.a", meta=("mean", "float"))
     assert isinstance(reduced, nd.NestedFrame)
