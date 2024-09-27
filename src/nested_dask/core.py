@@ -442,11 +442,6 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
                 nest_cols.append(column)
         return nest_cols
 
-    # def map_partitions(self, *args, **kwargs) -> NestedFrame:
-    #    """docstring"""
-    #    res = super().map_partitions(*args, **kwargs)
-    #    return res#.map_partitions(npd.NestedFrame, meta=npd.NestedFrame(res._meta.copy()))
-
     def _is_known_hierarchical_column(self, colname) -> bool:
         """Determine whether a string is a known hierarchical column name"""
         if "." in colname:
