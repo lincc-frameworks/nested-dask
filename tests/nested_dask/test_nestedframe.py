@@ -315,6 +315,31 @@ def test_reduce(test_dataset):
     assert pytest.approx(sum(res2.compute()[0]), 0.1) == 2488.960119
 
 
+@pytest.mark.parametrize("meta", ["df", "series"])
+def test_reduce_output_type(meta):
+    """test the meta handling of reduce"""
+
+    a = npd.NestedFrame({"a": pd.Series([1, 2, 3], dtype=pd.ArrowDtype(pa.int64()))}, index=[0, 0, 1])
+    b = npd.NestedFrame({"b": pd.Series([1, 2], dtype=pd.ArrowDtype(pa.int64()))}, index=[0, 1])
+
+    ndf = b.add_nested(a, name="test")
+    nddf = nd.NestedFrame.from_pandas(ndf, npartitions=1)
+
+    if meta == "df":
+
+        def mean_arr(b, arr):
+            return {"b": b, "mean": np.mean(arr)}
+
+        reduced = nddf.reduce(mean_arr, "b", "test.a", meta={"b": int, "mean": float})
+    elif meta == "series":
+
+        def mean_arr(arr):
+            return np.mean(arr)
+
+        reduced = nddf.reduce(mean_arr, "test.a", meta=("mean", "float"))
+    assert isinstance(reduced, nd.NestedFrame)
+
+
 def test_to_parquet_combined(test_dataset, tmp_path):
     """test to_parquet when saving all layers to a single directory"""
 
