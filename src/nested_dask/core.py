@@ -442,6 +442,11 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
                 nest_cols.append(column)
         return nest_cols
 
+    # def map_partitions(self, *args, **kwargs) -> NestedFrame:
+    #    """docstring"""
+    #    res = super().map_partitions(*args, **kwargs)
+    #    return res#.map_partitions(npd.NestedFrame, meta=npd.NestedFrame(res._meta.copy()))
+
     def _is_known_hierarchical_column(self, colname) -> bool:
         """Determine whether a string is a known hierarchical column name"""
         if "." in colname:
@@ -654,6 +659,14 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
         >>>    return {"sum_col1": sum(col1), "sum_col2": sum(col2)}
 
         """
+
+        # Handle meta shorthands to produce nestedframe output
+        # route standard dict meta to nestedframe
+        if isinstance(meta, dict):
+            meta = npd.NestedFrame(meta, index=[])
+        # reroute series meta to nestedframe, per consistency with nested-pandas
+        elif isinstance(meta, tuple) and len(meta) == 2:  # len 2 to only try on proper series meta
+            meta = npd.NestedFrame(pd.Series(name=meta[0], dtype=meta[1]).to_frame())
 
         # apply nested_pandas reduce via map_partitions
         # wrap the partition in a npd.NestedFrame call for:
