@@ -4,8 +4,6 @@
 name: Run benchmarks nightly job
 
 on:
-  pull_request:
-    branches: [ main ]
   schedule:
     - cron: 45 6 * * *
   workflow_dispatch:
