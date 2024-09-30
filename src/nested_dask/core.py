@@ -655,6 +655,15 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
 
         """
 
+        # Handle meta shorthands to produce nestedframe output
+        # route standard dict meta to nestedframe
+        if isinstance(meta, dict):
+            series_dict = {item[0]: pd.Series(dtype=item[1]) for item in meta.items()}
+            meta = npd.NestedFrame(series_dict)
+        # reroute series meta to nestedframe, per consistency with nested-pandas
+        elif isinstance(meta, tuple) and len(meta) == 2:  # len 2 to only try on proper series meta
+            meta = npd.NestedFrame(pd.Series(name=meta[0], dtype=meta[1]).to_frame())
+
         # apply nested_pandas reduce via map_partitions
         # wrap the partition in a npd.NestedFrame call for:
         # https://github.com/lincc-frameworks/nested-dask/issues/21
