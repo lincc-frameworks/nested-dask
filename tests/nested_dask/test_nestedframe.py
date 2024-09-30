@@ -336,8 +336,9 @@ def test_reduce_output_type(meta):
         def mean_arr(arr):  # type: ignore
             return np.mean(arr)  # type: ignore
 
-        reduced = nddf.reduce(mean_arr, "test.a", meta=("mean", "float"))
+        reduced = nddf.reduce(mean_arr, "test.a", meta=(0, "float"))
     assert isinstance(reduced, nd.NestedFrame)
+    assert isinstance(reduced.compute(), npd.NestedFrame)
 
 
 def test_to_parquet_combined(test_dataset, tmp_path):
