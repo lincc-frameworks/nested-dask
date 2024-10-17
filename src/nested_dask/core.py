@@ -121,6 +121,11 @@ class NestedFrame(
 
         return super().__setitem__(key, value)
 
+    def _repr_html_(self):
+        # following dask-geopandas lead
+        output = super()._repr_html_()
+        return output.replace("Dask DataFrame Structure", "Nested-Dask NestedFrame Structure")
+
     @classmethod
     def from_pandas(
         cls,
