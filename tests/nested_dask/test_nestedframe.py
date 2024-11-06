@@ -1,13 +1,14 @@
 import dask
 import dask.dataframe as dd
-import nested_dask as nd
 import nested_pandas as npd
 import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pytest
-from nested_dask.datasets import generate_data
 from nested_pandas.series.dtype import NestedDtype
+
+import nested_dask as nd
+from nested_dask.datasets import generate_data
 
 dask.config.set({"dataframe.convert-string": False})
 
@@ -173,7 +174,7 @@ def test_from_flat():
     assert len(ndf_comp) == 2
 
     # Check using an index
-    ndf = nd.NestedFrame.from_flat(nf, base_columns=["b"], index="a")
+    ndf = nd.NestedFrame.from_flat(nf, base_columns=["b"], on="a")
     assert list(ndf.columns) == ["b", "nested"]
     assert list(ndf["nested"].nest.fields) == ["c", "d"]
     ndf_comp = ndf.compute()
