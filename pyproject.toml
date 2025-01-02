@@ -1,6 +1,7 @@
 [project]
 name = "nested-dask"
 license = {file = "LICENSE"}
+description = "Parallel nested-pandas with Dask."
 readme = "README.md"
 authors = [
     { name = "lincc-frameworks", email = "brantd@uw.edu" }
