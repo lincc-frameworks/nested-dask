@@ -3,11 +3,11 @@ from __future__ import annotations
 import os
 
 import dask.dataframe as dd
-import dask_expr as dx
+import dask.dataframe.dask_expr as dx
 import nested_pandas as npd
 import pandas as pd
 import pyarrow as pa
-from dask_expr._collection import new_collection
+from dask.dataframe.dask_expr._collection import new_collection
 from nested_pandas.series.dtype import NestedDtype
 from nested_pandas.series.packer import pack, pack_flat
 from pandas._libs import lib

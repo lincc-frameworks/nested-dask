@@ -21,7 +21,6 @@ dependencies = [
     'numpy',
     'dask>=2024.3.0',
     'dask[distributed]>=2024.3.0',
-    'dask_expr',
     'pyarrow',
 ]
 
