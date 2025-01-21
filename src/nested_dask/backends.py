@@ -4,10 +4,10 @@ from __future__ import annotations
 import nested_pandas as npd
 import pandas as pd
 from dask.dataframe.backends import meta_nonempty_dataframe
+from dask.dataframe.dask_expr._dispatch import get_collection_type
 from dask.dataframe.dispatch import make_meta_dispatch
 from dask.dataframe.extensions import make_array_nonempty
 from dask.dataframe.utils import meta_nonempty
-from dask_expr import get_collection_type
 from nested_pandas.series.ext_array import NestedExtensionArray
 
 from .core import NestedFrame
