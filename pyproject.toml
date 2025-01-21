@@ -15,12 +15,12 @@ classifiers = [
     "Programming Language :: Python",
 ]
 dynamic = ["version"]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     'nested-pandas>=0.3.1,<0.4.0',
     'numpy',
-    'dask>=2024.3.0',
-    'dask[distributed]>=2024.3.0',
+    'dask>=2024.3.0,<2025.1.0',
+    'dask[distributed]>=2024.3.0,<2025.1.0',
     'dask_expr',
     'pyarrow',
 ]
@@ -58,7 +58,7 @@ testpaths = [
 
 [tool.black]
 line-length = 110
-target-version = ["py39"]
+target-version = ["py310"]
 
 [tool.isort]
 profile = "black"
@@ -66,7 +66,7 @@ line_length = 110
 
 [tool.ruff]
 line-length = 110
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
