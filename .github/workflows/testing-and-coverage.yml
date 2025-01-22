@@ -34,5 +34,5 @@ jobs:
         python -m pytest --cov=nested_dask --cov-report=xml
     - name: Upload coverage report to codecov
       uses: codecov/codecov-action@v5
-      env:
+      with:
         token: ${{ secrets.CODECOV_TOKEN }}
