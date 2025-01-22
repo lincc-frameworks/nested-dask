@@ -58,10 +58,6 @@ def _nested_meta_from_flat(flat, name):
     return pd.Series(name=name, dtype=NestedDtype.from_fields(pyarrow_fields))
 
 
-def test_func_for_codecov(a, b):
-    return a + b
-
-
 class NestedFrame(
     _Frame, dd.DataFrame
 ):  # can use dd.DataFrame instead of dx.DataFrame if the config is set true (default in >=2024.3.0)
