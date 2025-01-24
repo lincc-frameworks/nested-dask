@@ -3,6 +3,8 @@
 [![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
 
 [![PyPI](https://img.shields.io/pypi/v/nested-dask?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/nested-dask/)
+[![Conda](https://img.shields.io/conda/vn/conda-forge/nested-dask.svg?color=blue&logo=condaforge&logoColor=white)](https://anaconda.org/conda-forge/nested-dask)
+
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lincc-frameworks/nested-dask/smoke-test.yml)](https://github.com/lincc-frameworks/nested-dask/actions/workflows/smoke-test.yml)
 [![Codecov](https://codecov.io/gh/lincc-frameworks/nested-dask/branch/main/graph/badge.svg)](https://codecov.io/gh/lincc-frameworks/nested-dask)
 [![Read The Docs](https://img.shields.io/readthedocs/nested-dask)](https://nested-dask.readthedocs.io/)
