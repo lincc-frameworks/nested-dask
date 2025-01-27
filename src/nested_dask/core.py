@@ -3,11 +3,11 @@ from __future__ import annotations
 import os
 
 import dask.dataframe as dd
-import dask_expr as dx
+import dask.dataframe.dask_expr as dx
 import nested_pandas as npd
 import pandas as pd
 import pyarrow as pa
-from dask_expr._collection import new_collection
+from dask.dataframe.dask_expr._collection import new_collection
 from nested_pandas.series.dtype import NestedDtype
 from nested_pandas.series.packer import pack, pack_flat
 from pandas._libs import lib
@@ -287,7 +287,7 @@ class NestedFrame(
         return NestedFrame.from_dask_dataframe(nf)
 
     @classmethod
-    def from_flat(cls, df, base_columns, nested_columns=None, index=None, name="nested"):
+    def from_flat(cls, df, base_columns, nested_columns=None, on=None, name="nested"):
         """Creates a NestedFrame with base and nested columns from a flat
         dataframe.
 
@@ -303,7 +303,7 @@ class NestedFrame(
             in the list will attempt to be packed into a single nested column
             with the name provided in `nested_name`. If None, is defined as all
             columns not in `base_columns`.
-        index: str, or None
+        on: str or None
             The name of a column to use as the new index. Typically, the index
             should have a unique value per row for base columns, and should
             repeat for nested columns. For example, a dataframe with two
@@ -323,7 +323,7 @@ class NestedFrame(
         meta = npd.NestedFrame(df[base_columns]._meta)
 
         if nested_columns is None:
-            nested_columns = [col for col in df.columns if (col not in base_columns) and col != index]
+            nested_columns = [col for col in df.columns if (col not in base_columns) and col != on]
 
         if len(nested_columns) > 0:
             nested_meta = pack(df[nested_columns]._meta, name)
@@ -331,7 +331,7 @@ class NestedFrame(
 
         return df.map_partitions(
             lambda x: npd.NestedFrame.from_flat(
-                df=x, base_columns=base_columns, nested_columns=nested_columns, index=index, name=name
+                df=x, base_columns=base_columns, nested_columns=nested_columns, on=on, name=name
             ),
             meta=meta,
         )

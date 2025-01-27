@@ -1,6 +1,8 @@
 import nested_dask as nd
 import nested_pandas as npd
 import numpy as np
+import pandas as pd
+import pyarrow as pa
 import pytest
 
 
@@ -18,7 +20,11 @@ def test_dataset():
     layer_data = {
         "t": randomstate.random(layer_size * n_base) * 20,
         "flux": randomstate.random(layer_size * n_base) * 100,
-        "band": randomstate.choice(["r", "g"], size=layer_size * n_base),
+        # Ensure pyarrow[string] dtype, not large_string
+        # https://github.com/lincc-frameworks/nested-dask/issues/71
+        "band": pd.Series(
+            randomstate.choice(["r", "g"], size=layer_size * n_base), dtype=pd.ArrowDtype(pa.string())
+        ),
         "index": np.arange(layer_size * n_base) % n_base,
     }
     layer_nf = npd.NestedFrame(data=layer_data).set_index("index").sort_index()
