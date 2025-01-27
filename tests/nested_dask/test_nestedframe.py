@@ -173,7 +173,7 @@ def test_from_flat():
     assert len(ndf_comp) == 2
 
     # Check using an index
-    ndf = nd.NestedFrame.from_flat(nf, base_columns=["b"], index="a")
+    ndf = nd.NestedFrame.from_flat(nf, base_columns=["b"], on="a")
     assert list(ndf.columns) == ["b", "nested"]
     assert list(ndf["nested"].nest.fields) == ["c", "d"]
     ndf_comp = ndf.compute()
