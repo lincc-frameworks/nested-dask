@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import nested_pandas as npd
 import pandas as pd
+from dask._dispatch import get_collection_type
 from dask.dataframe.backends import meta_nonempty_dataframe
-from dask.dataframe.dask_expr._dispatch import get_collection_type
 from dask.dataframe.dispatch import make_meta_dispatch
 from dask.dataframe.extensions import make_array_nonempty
 from dask.dataframe.utils import meta_nonempty
