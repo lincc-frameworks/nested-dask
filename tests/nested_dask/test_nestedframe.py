@@ -8,6 +8,7 @@ import pyarrow as pa
 import pytest
 from nested_dask.datasets import generate_data
 from nested_pandas.series.dtype import NestedDtype
+from pandas.testing import assert_frame_equal
 
 dask.config.set({"dataframe.convert-string": False})
 
@@ -205,6 +206,7 @@ def test_from_lists():
     ndf_comp = ndf.compute()
     assert list(ndf.columns) == list(ndf_comp.columns)
     assert list(ndf["nested"].nest.fields) == list(ndf["nested"].nest.fields)
+    assert_frame_equal(ndf_comp.iloc[:0], ndf.meta)
 
     # Check with just list_columns
     ndf = nd.NestedFrame.from_lists(nf, list_columns=["e", "f"])

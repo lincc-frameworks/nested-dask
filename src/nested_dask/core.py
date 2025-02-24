@@ -9,7 +9,7 @@ import pandas as pd
 import pyarrow as pa
 from dask.dataframe.dask_expr._collection import new_collection
 from nested_pandas.series.dtype import NestedDtype
-from nested_pandas.series.packer import pack, pack_flat
+from nested_pandas.series.packer import pack, pack_flat, pack_lists
 from pandas._libs import lib
 from pandas._typing import AnyAll, Axis, IndexLabel
 from pandas.api.extensions import no_default
@@ -414,7 +414,7 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
 
         meta = npd.NestedFrame(df[base_columns]._meta)
 
-        nested_meta = pack(df[list_columns]._meta, name)
+        nested_meta = pack_lists(df[list_columns]._meta, name)
         meta = meta.join(nested_meta)
 
         return df.map_partitions(
