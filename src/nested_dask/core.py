@@ -698,7 +698,7 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
         target = np.unique(target).tolist()
         if len(target) > 1:
             raise ValueError("Queries cannot target multiple structs/layers, write a separate query for each")
-        target_layer = str(target[0])
+        target_layer = target[0]
 
         # Just use dask's sort_values if the target is the base layer
         # Drops divisions, but this is expected behavior of a sorting operation
