@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable, Mapping
+from typing import Any, Literal
 
 import dask.dataframe as dd
 import dask.dataframe.dask_expr as dx
 import nested_pandas as npd
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 from dask.dataframe.dask_expr._collection import new_collection
@@ -612,6 +615,103 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
                 subset=subset,
                 inplace=inplace,
                 ignore_index=ignore_index,
+            ),
+            meta=self._meta,
+        )
+
+    def sort_values(
+        self,
+        by: str | list[str],
+        npartitions: int | None = None,
+        ascending: bool | list[bool] = True,
+        na_position: Literal["first"] | Literal["last"] = "last",
+        partition_size: float = 128e6,
+        sort_function: Callable[[npd.NestedFrame], npd.NestedFrame] | None = None,
+        sort_function_kwargs: Mapping[str, Any] | None = None,
+        upsample: float = 1.0,
+        ignore_index: bool | None = False,
+        shuffle_method: str | None = None,
+        **options,
+    ) -> Self:  # type: ignore[name-defined] # noqa: F821:
+        """
+        Sort the dataset by a single column.
+
+        Sorting a parallel dataset requires expensive shuffles and is generally
+        not recommended. See ‘set_index‘ for implementation details.
+
+        Parameters:
+        -----------
+        by: str or list[str]
+            Column(s) to sort by.
+        npartitions: int, None, or ‘auto’
+            The ideal number of output partitions. If None, use the same as the
+            input. If ‘auto’ then decide by memory use. Not used when sorting
+            nested layers.
+        ascending: bool, optional
+            Sort ascending vs. descending. Defaults to True.
+        na_position: {‘last’, ‘first’}, optional
+            Puts NaNs at the beginning if ‘first’, puts NaN at the end if
+            ‘last’. Defaults to ‘last’.
+        sort_function: function, optional
+            Sorting function to use when sorting underlying partitions. If
+            None, defaults to M.sort_values (the partition library’s
+            implementation of sort_values). Not used when sorting nested
+            layers.
+        sort_function_kwargs: dict, optional
+            Additional keyword arguments to pass to the partition sorting
+            function. By default, by, ascending, and na_position are provided.
+
+        Returns:
+        --------
+        DataFrame
+            DataFrame with sorted values.
+
+        """
+
+        # Resolve target layer
+        target = []
+        if isinstance(by, str):
+            by = [by]
+        # Check "by" columns for hierarchical references
+        for col in by:
+            if self._is_known_hierarchical_column(col):
+                target.append(col.split(".")[0])
+            else:
+                target.append("base")
+
+        # Ensure one target layer, preventing multi-layer operations
+        target = np.unique(target)
+        if len(target) > 1:
+            raise ValueError("Queries cannot target multiple structs/layers, write a separate query for each")
+        target = str(target[0])
+
+        # Just use dask's sort_values if the target is the base layer
+        # Drops divisions, but this is expected behavior of a sorting operation
+        if target == "base":
+            return super().sort_values(
+                by=by,
+                npartitions=npartitions,
+                ascending=ascending,
+                na_position=na_position,
+                partition_size=partition_size,
+                sort_function=sort_function,
+                sort_function_kwargs=sort_function_kwargs,
+                upsample=upsample,
+                ignore_index=ignore_index,
+                shuffle_method=shuffle_method,
+                **options,
+            )
+
+        # If nested target layer, go through nested-pandas API
+        # apply via map_partitions, meta is propagated
+        # does preserve divisions
+        return self.map_partitions(
+            lambda x: npd.NestedFrame(x).sort_values(
+                by=by,
+                ascending=ascending,
+                na_position=na_position,
+                ignore_index=ignore_index,
+                **options,
             ),
             meta=self._meta,
         )
