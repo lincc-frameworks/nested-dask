@@ -308,8 +308,8 @@ def test_sort_values(test_dataset):
 
     # test sorting on nested columns
     sorted_nested = test_dataset.sort_values(by="nested.flux", ascending=False)
-    assert sorted_nested.compute().loc[0]["nested"]["flux"].values.tolist() == sorted(
-        test_dataset.loc[0]["nested.flux"].values.compute().tolist(),
+    assert sorted_nested.compute().iloc[0]["nested"]["flux"].values.tolist() == sorted(
+        test_dataset.compute().iloc[0]["nested"]["flux"].values.tolist(),
         reverse=True,
     )
     assert sorted_nested.known_divisions  # Divisions should be known

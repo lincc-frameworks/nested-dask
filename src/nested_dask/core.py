@@ -647,8 +647,10 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
             The ideal number of output partitions. If None, use the same as the
             input. If ‘auto’ then decide by memory use. Not used when sorting
             nested layers.
-        ascending: bool, optional
-            Sort ascending vs. descending. Defaults to True.
+        ascending: bool or list[bool], optional
+            Sort ascending vs. descending. Defaults to True. Specify list for
+            multiple sort orders. If this is a list of bools, must match the
+            length of the by.
         na_position: {‘last’, ‘first’}, optional
             Puts NaNs at the beginning if ‘first’, puts NaN at the end if
             ‘last’. Defaults to ‘last’.
