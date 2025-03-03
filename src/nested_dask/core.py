@@ -684,21 +684,21 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
         """
 
         # Resolve target layer
-        target = []
+        targets = []
         if isinstance(by, str):
             by = [by]
         # Check "by" columns for hierarchical references
         for col in by:
             if self._is_known_hierarchical_column(col):
-                target.append(col.split(".")[0])
+                targets.append(col.split(".")[0])
             else:
-                target.append("base")
+                targets.append("base")
 
         # Ensure one target layer, preventing multi-layer operations
-        target = np.unique(target).tolist()
-        if len(target) > 1:
+        unq_targets = np.unique(targets).tolist()
+        if len(unq_targets) > 1:
             raise ValueError("Queries cannot target multiple structs/layers, write a separate query for each")
-        target_layer = target[0]
+        target_layer = unq_targets[0]
 
         # Just use dask's sort_values if the target is the base layer
         # Drops divisions, but this is expected behavior of a sorting operation
