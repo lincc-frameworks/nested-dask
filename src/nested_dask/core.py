@@ -14,7 +14,7 @@ from dask.dataframe.dask_expr._collection import new_collection
 from nested_pandas.series.dtype import NestedDtype
 from nested_pandas.series.packer import pack, pack_flat, pack_lists
 from pandas._libs import lib
-from pandas._typing import AnyAll, Axis, IndexLabel
+from pandas._typing import Axis, IndexLabel
 from pandas.api.extensions import no_default
 
 # need this for the base _Frame class
@@ -543,7 +543,7 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
         self,
         *,
         axis: Axis = 0,
-        how: AnyAll | lib.NoDefault = no_default,
+        how: str | lib.NoDefault = no_default,
         thresh: int | lib.NoDefault = no_default,
         on_nested: bool = False,
         subset: IndexLabel | None = None,
@@ -626,7 +626,7 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
         ascending: bool | list[bool] = True,
         na_position: Literal["first"] | Literal["last"] = "last",
         partition_size: float = 128e6,
-        sort_function: Callable[[npd.NestedFrame], npd.NestedFrame] | None = None,
+        sort_function: Callable[[pd.DataFrame], pd.DataFrame] | None = None,
         sort_function_kwargs: Mapping[str, Any] | None = None,
         upsample: float = 1.0,
         ignore_index: bool | None = False,
@@ -654,6 +654,9 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
         na_position: {‘last’, ‘first’}, optional
             Puts NaNs at the beginning if ‘first’, puts NaN at the end if
             ‘last’. Defaults to ‘last’.
+        partition_size: float, optional
+            The desired size of each partition in bytes. Defaults to 128e6
+            (128 MB). Not used in nested sorting.
         sort_function: function, optional
             Sorting function to use when sorting underlying partitions. If
             None, defaults to M.sort_values (the partition library’s
@@ -662,7 +665,17 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
         sort_function_kwargs: dict, optional
             Additional keyword arguments to pass to the partition sorting
             function. By default, by, ascending, and na_position are provided.
-
+        upsample: float, optional
+            Used to increase the number of samples for quantiles. Not used
+            in nested sorting
+        ignore_index: bool, optional
+            If True, the resulting axis will be labeled 0, 1, …, n - 1.
+            Defaults to False.
+        shuffle_method: str, optional
+            The method to use for shuffling data. Defaults to None. Not used
+            in nested sorting
+        **options: keyword arguments, optional
+            Additional options to pass to the sorting function.
         Returns:
         --------
         DataFrame
@@ -682,14 +695,14 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
                 target.append("base")
 
         # Ensure one target layer, preventing multi-layer operations
-        target = np.unique(target)
+        target = np.unique(target).tolist()
         if len(target) > 1:
             raise ValueError("Queries cannot target multiple structs/layers, write a separate query for each")
-        target = str(target[0])
+        target_layer = str(target[0])
 
         # Just use dask's sort_values if the target is the base layer
         # Drops divisions, but this is expected behavior of a sorting operation
-        if target == "base":
+        if target_layer == "base":
             return super().sort_values(
                 by=by,
                 npartitions=npartitions,
