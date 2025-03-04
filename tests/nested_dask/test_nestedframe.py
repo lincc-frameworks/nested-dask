@@ -299,6 +299,26 @@ def test_dropna(test_dataset_with_nans):
     assert len(flat_nested_nan_free) == len(flat_nested) - 1
 
 
+def test_sort_values(test_dataset):
+    """test the sort_values function"""
+
+    # test sorting on base columns
+    sorted_base = test_dataset.sort_values(by="a")
+    assert sorted_base["a"].values.compute().tolist() == sorted(test_dataset["a"].values.compute().tolist())
+
+    # test sorting on nested columns
+    sorted_nested = test_dataset.sort_values(by="nested.flux", ascending=False)
+    assert sorted_nested.compute().iloc[0]["nested"]["flux"].values.tolist() == sorted(
+        test_dataset.compute().iloc[0]["nested"]["flux"].values.tolist(),
+        reverse=True,
+    )
+    assert sorted_nested.known_divisions  # Divisions should be known
+
+    # Make sure we trigger multi-target exception
+    with pytest.raises(ValueError):
+        test_dataset.sort_values(by=["a", "nested.flux"])
+
+
 def test_reduce(test_dataset):
     """test the reduce function"""
 
