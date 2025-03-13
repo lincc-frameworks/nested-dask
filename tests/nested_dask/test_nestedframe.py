@@ -363,6 +363,43 @@ def test_reduce_output_type(meta):
     assert isinstance(reduced.compute(), npd.NestedFrame)
 
 
+def test_reduce_output_inference():
+    """test the extension of the reduce result nesting inference"""
+
+    ndd = generate_data(20, 20, npartitions=2, seed=1)
+
+    def complex_output(flux):
+        return {
+            "max_flux": np.max(flux),
+            "lc.flux_quantiles": np.quantile(flux, [0.1, 0.2, 0.3, 0.4, 0.5]),
+            "lc.labels": [0.1, 0.2, 0.3, 0.4, 0.5],
+            "meta.colors": ["green", "red", "blue"],
+        }
+
+    # this sucks
+    result_meta = npd.NestedFrame(
+        {
+            "max_flux": pd.Series([], dtype="float"),
+            "lc": pd.Series(
+                [],
+                dtype=NestedDtype(
+                    pa.struct(
+                        [
+                            pa.field("flux_quantiles", pa.list_(pa.float64())),
+                            pa.field("labels", pa.list_(pa.float64())),
+                        ]
+                    )
+                ),
+            ),
+            "meta": pd.Series([], dtype=NestedDtype(pa.struct([pa.field("colors", pa.list_(pa.string()))]))),
+        }
+    )
+    result = ndd.reduce(complex_output, "nested.flux", infer_nesting=True, meta=result_meta)
+
+    assert list(result.dtypes) == list(result.compute().dtypes)
+    assert list(result.columns) == list(result.compute().columns)
+
+
 def test_to_parquet_combined(test_dataset, tmp_path):
     """test to_parquet when saving all layers to a single directory"""
 

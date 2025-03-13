@@ -731,7 +731,7 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
             meta=self._meta,
         )
 
-    def reduce(self, func, *args, meta=None, **kwargs) -> NestedFrame:
+    def reduce(self, func, *args, meta=None, infer_nesting=True, **kwargs) -> NestedFrame:
         """
         Takes a function and applies it to each top-level row of the NestedFrame.
 
@@ -752,6 +752,12 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
             columns to apply the function to.
         meta : dataframe or series-like, optional
             The dask meta of the output.
+        infer_nesting : bool, default True
+            If True, the function will pack output columns into nested
+            structures based on column names adhering to a nested naming
+            scheme. E.g. "nested.b" and "nested.c" will be packed into a column
+            called "nested" with columns "b" and "c". If False, all outputs
+            will be returned as base columns.
         kwargs : keyword arguments, optional
             Keyword arguments to pass to the function.
 
@@ -787,7 +793,9 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
         # apply nested_pandas reduce via map_partitions
         # wrap the partition in a npd.NestedFrame call for:
         # https://github.com/lincc-frameworks/nested-dask/issues/21
-        return self.map_partitions(lambda x: npd.NestedFrame(x).reduce(func, *args, **kwargs), meta=meta)
+        return self.map_partitions(
+            lambda x: npd.NestedFrame(x).reduce(func, *args, infer_nesting=infer_nesting, **kwargs), meta=meta
+        )
 
     def to_parquet(self, path, by_layer=True, **kwargs) -> None:
         """Creates parquet file(s) with the data of a NestedFrame, either
