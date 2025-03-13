@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 from dask.dataframe.dask_expr._collection import new_collection
+from dask.dataframe.dask_expr._expr import no_default as dsk_no_default
 from nested_pandas.series.dtype import NestedDtype
 from nested_pandas.series.packer import pack, pack_flat, pack_lists
 from pandas._libs import lib
@@ -731,7 +732,7 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
             meta=self._meta,
         )
 
-    def reduce(self, func, *args, meta=None, infer_nesting=True, **kwargs) -> NestedFrame:
+    def reduce(self, func, *args, meta=dsk_no_default, infer_nesting=True, **kwargs) -> NestedFrame:
         """
         Takes a function and applies it to each top-level row of the NestedFrame.
 
@@ -751,7 +752,9 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
             Positional arguments to pass to the function, the first *args should be the names of the
             columns to apply the function to.
         meta : dataframe or series-like, optional
-            The dask meta of the output.
+            The dask meta of the output. If not provided, dask will try to
+            infer the metadata. This may lead to unexpected results, so
+            providing meta is recommended.
         infer_nesting : bool, default True
             If True, the function will pack output columns into nested
             structures based on column names adhering to a nested naming
