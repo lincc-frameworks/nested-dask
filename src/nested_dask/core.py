@@ -782,6 +782,25 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
         >>>    '''reduce will return a NestedFrame with two columns'''
         >>>    return {"sum_col1": sum(col1), "sum_col2": sum(col2)}
 
+        When using nesting inference (infer_nesting=True), the output may
+        contain nested columns. In such cases, the meta should be provided with
+        the appropriate dtype for these columns. For example, the following
+        function, which produces a nested column "lc":
+
+        >>> def complex_output(flux):
+        >>>   return {"max_flux": np.max(flux),
+        >>>           "lc.flux_quantiles": np.quantile(flux, [0.1, 0.2, 0.3, 0.4, 0.5]),
+        >>>           "lc.labels": [0.1, 0.2, 0.3, 0.4, 0.5]}
+
+        Would require the following meta:
+
+        >>> from nested_pandas.series.dtype import NestedDtype
+        >>> lc_dtype = NestedDtype(pa.struct([pa.field("flux_quantiles", pa.list_(pa.float64())),
+        >>>                                   pa.field("labels", pa.list_(pa.float64()))]))
+
+        >>> result_meta = npd.NestedFrame({'max_flux':pd.Series([], dtype='float'),
+        >>>                 'lc':pd.Series([], dtype=lc_dtype)})
+
         """
 
         # Handle meta shorthands to produce nestedframe output
