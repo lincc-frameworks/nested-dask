@@ -794,10 +794,11 @@ Refer to the docstring for guidance on dtype requirements and assignment."""
 
         Would require the following meta:
 
+        >>> # create a NestedDtype for the nested column "lc"
         >>> from nested_pandas.series.dtype import NestedDtype
         >>> lc_dtype = NestedDtype(pa.struct([pa.field("flux_quantiles", pa.list_(pa.float64())),
         >>>                                   pa.field("labels", pa.list_(pa.float64()))]))
-
+        >>> # use the lc_dtype in meta creation
         >>> result_meta = npd.NestedFrame({'max_flux':pd.Series([], dtype='float'),
         >>>                 'lc':pd.Series([], dtype=lc_dtype)})
 
